@@ -257,7 +257,7 @@ def handleAudioMessage(event):
 
 AAA = []
 if __name__ == "__main__":
-    app.run(port=32004)
+    app.run(port=os.getenv('API_PORT'))
 
 
 # In[ ]:
