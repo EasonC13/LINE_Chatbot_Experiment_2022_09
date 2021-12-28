@@ -1,4 +1,4 @@
-# LINE 語音陪伴聊天機器人
+# LINE Accompany Voice Chatbot LINE 語音陪伴聊天機器人
 
 > LINE_voice_to_accompany_chatbot
 
