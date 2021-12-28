@@ -1,0 +1,5 @@
+./start.sh
+*.sh
+*.json
+.env
+*.ipynb_check*
