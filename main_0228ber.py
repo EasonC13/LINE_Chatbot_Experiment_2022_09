@@ -9,12 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import pymongo
-MongoClient = pymongo.MongoClient(os.getenv('MONGODB_URI'))
-GPT3_chat_history_col = MongoClient["GPT3_Chatbot"]["GPT3_Chat"]
-GPT3_chat_user_col = MongoClient["GPT3_Chatbot"]["Users"]
-GPT3_chat_bots_col = MongoClient["GPT3_Chatbot"]["Bots"]
-
 
 # In[2]:
 
@@ -124,28 +118,35 @@ import threading
 import time
 def doThreading(func, args, waitingTime = 0):
     time.sleep(waitingTime)
-    try:
-        if len(args) == 1:
-            t = threading.Thread(target = func, args = (args,))
-        else:
-            t = threading.Thread(target = func, args = (args))
-    except:
-        t = threading.Thread(target = func, args = (args,))
+    t = threading.Thread(target = func, args = (args, ))
     t.start()
-    return t
-
-
-# In[ ]:
-
-
-
 
 
 # In[6]:
 
 
+def generate_text_response(input_text):
+    result = requests.post(os.getenv('API_URL'), 
+                      headers = {'accept': 'application/json',
+                                 'Content-Type': 'application/json'},
+                      data = json.dumps({
+                          "email": os.getenv('API_USER'),
+                          "secret": os.getenv('API_SECRET'),
+                          "text": input_text,
+                          "emotion": 1,
+                          "response_count": 1,
+                      }))
+    response_text = result.json()["responses"][0]
+
+    return response_text
+    print(f"{text} => {response_text}")
+
+
+# In[7]:
+
+
 def process_voice_message(event):
-    #AAA.append(event)
+    AAA.append(event)
     file_path = f'/tmp/{uuid.uuid4()}'
     
     message_content = line_bot_api.get_message_content(event.message.id)
@@ -160,85 +161,78 @@ def process_voice_message(event):
             stderr=subprocess.STDOUT)
 
     text = process_voice_file(file_path)
-    send_GPT3_response(text = text, event = event)
+    response_text = generate_text_response(text)
+    print(f'{text} => {response_text}')
+
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=response_text))
+
+    user_profile = line_bot_api.get_profile(event.source.user_id)
+    GPT3_chat_history_col.insert_one({
+        'input_text': text,
+        'response_text': response_text,
+        'event_message_id': event.message.id,
+        'user': {
+            "display_name": user_profile.display_name,
+            "user_id": event.source.user_id
+        },
+        "time": datetime.datetime.now(),
+        "input_type": 'voice',
+    })
 
 
-# In[7]:
+# In[8]:
 
 
-from bson.objectid import ObjectId
-def create_prompt(prompt, prev_msgs, text, num = -3):
-    prompt = (prompt + "\n") if prompt[-1] != "\n" else prompt
+def create_prompt(prev_msgs, text, num = -3):
+    prompt = ""
     for msg in prev_msgs[num:]:
         prompt += f"You: {msg['input_text_en']}\nFriend: {msg['response_text_en']}\n"
     prompt += f"You: {text}\nFriend: "
     return prompt
 
 
-# In[ ]:
-
-
-
-
-
-# In[8]:
-
-
-def get_user(event):
-    user_profile = line_bot_api.get_profile(event.source.user_id)
-    
-    user = GPT3_chat_user_col.find_one({
-        'user_id': event.source.user_id
-    })
-    if user == None:
-        user = {
-            'user_id': event.source.user_id,
-            'display_name': user_profile.display_name,
-            'bots': ['欠嗆貓', 'Stonk_Guy', 'LLENN', '棒男孩', 'Gawr_Gura'],
-            'sn': 0
-        }
-        GPT3_chat_user_col.insert_one(user)
-    return user
-
-
 # In[9]:
 
 
-#以棄用
-def update_pre_prompt():
-    """def update_pre_prompt(user_id, text):
-        GPT3_chat_user_col.update_one({
-                "user_id": user_id
-            },{
-                "$set": {"pre_prompt": text}
+def create_user(user_id):
+    user = GPT3_chat_user_col.find_one({
+        'user_id': user_id
+    })
+    if user == None:
+        GPT3_chat_user_col.insert_one({
+                'user_id': user_id,
+                'sn': 0
             })
-
-    def update_chat_with(user_id, chat_with, chat_from = "You"):
-        GPT3_chat_user_col.update_one({
-                "user_id": user_id
-            },{"$set":{
-                "chat_with": chat_with,
-                "chat_from": chat_from,
-            }})"""
-pass
+        return True
+    else:
+        print(f"[warning] User {user_id} already exist, not create.")
+        return False
 
 
 # In[10]:
 
 
-def generate_GPT3_response(event, text, bot):
-    
-    user = get_user(event)
-    
-    prev_msgs = GPT3_chat_history_col.find({
-        'user.user_id': event.source.user_id,
-        'user.sn': user['sn'], #serial number
-        'bot_id': bot['id'],
+def generate_GPT3_response(event, text):
+    user = GPT3_chat_user_col.find_one({
+        'user_id': event.source.user_id
     })
+    
+    if user:
+        prev_msgs = GPT3_chat_history_col.find({
+                'user.user_id': event.source.user_id,
+                'user.sn': user['sn'] #serial number
+            })
+    else:
+        prev_msgs = []
+        create_user(event.source.user_id)
+
     prev_msgs = list(prev_msgs)
+
     prev_msgs.sort(key=lambda x: x['time'])
     
-    prompt = create_prompt(bot['prefix'], prev_msgs, text, -3)
+    prompt = create_prompt(prev_msgs, text, -3)
     
     have_second_chance = True
     max_try = 4
@@ -248,7 +242,7 @@ def generate_GPT3_response(event, text, bot):
           engine="text-davinci-001",
           prompt=prompt,
           temperature=0.6 + 0.1*i,
-          max_tokens=120,
+          max_tokens=60,
           top_p=1.0,
           frequency_penalty=0.5 + 0.5 * i,
           presence_penalty=0.5 + 0.5 * i,
@@ -265,15 +259,14 @@ def generate_GPT3_response(event, text, bot):
                 have_second_chance = False
             elif i == max_try - 2:
                 #print("Last Try")
-                prompt = create_prompt(bot['prefix'], [], text, -1)
+                prompt = create_prompt([], text, -1)
             else:
-                prompt = create_prompt(bot['prefix'], prev_msgs, text, -1)
+                prompt = create_prompt(prev_msgs, text, -1)
             #print("New Prompt: ", prompt)
         else:
             break
     print("--GPT3 Input/Output--")
     print(prompt + response_text, end = '\n')
-    
     return response_text
 
 
@@ -287,6 +280,107 @@ def norm_text(text):
 
 # In[12]:
 
+
+def process_text_message(event):
+    AAA.append(event)
+    text = event.message.text
+    
+    if process_command(event, text):
+        return True
+    
+    translated_result = translate(text, target="en")
+    #response_text = generate_GPT3_response(event, text)
+    
+    text_en = translated_result['translatedText']
+    text_en = norm_text(text_en)
+    text_source = translated_result['detectedSourceLanguage']
+    
+    response_text = ""
+    while response_text == "":
+        response_text_en = generate_GPT3_response(event, text_en)
+        response_text_en = norm_text(response_text_en)
+
+        if text_source[:2] == "zh":
+            response_text = translate(response_text_en, target="zh-TW")['translatedText']
+        elif text_source != 'en':
+            response_text = translate(response_text_en, target=text_source)['translatedText']
+        else:
+            response_text = response_text_en
+
+    
+    print('--Origin--')
+    print(f'{text_en} => {response_text_en}')
+    print('--Translated--')
+    print(f'{text} => {response_text}')
+    print('========')
+    
+    message = []
+    message.append(TextSendMessage(text=response_text))
+    #message.append(
+    #    TextSendMessage(text=f'此聊天機器人會根據先前的對話輸出結果，如果持續說重複的話，請輸入「重置」以修復')
+    #)
+    line_bot_api.reply_message(event.reply_token, message)
+
+    user_profile = line_bot_api.get_profile(event.source.user_id)
+    GPT3_chat_history_col.insert_one({
+        'input_text': text,
+        'input_text_en': text_en,
+        'response_text_en': response_text_en,
+        'response_text': response_text,
+        'event_message_id': event.message.id,
+        'user': {
+            "display_name": user_profile.display_name,
+            "user_id": event.source.user_id
+        },
+        "time": datetime.datetime.now(),
+        "input_type": 'text',
+    })
+
+
+# In[13]:
+
+
+change_topic_command_zh = [
+    '重置', '換個話題',
+]
+change_topic_command_en = [
+    'restart', 'change topic'
+]
+
+def increase_chat_sn(user_id):
+    GPT3_chat_user_col.update_one({
+            "user_id": user_id
+        },{
+            "$inc": {'sn': 1}
+        })
+
+def process_command(event, text):
+    user_id = event.source.user_id
+    user = GPT3_chat_user_col.find_one({
+        "user_id": user_id
+    })
+    
+    if text in change_topic_command_zh:
+        increase_chat_sn(user_id)
+        line_bot_api.reply_message(event.reply_token, 
+           TextSendMessage(text='''已更換話題，讓我們繼續聊天吧～
+如果我又持續說重複的話，請輸入「換個話題」以繼續對話'''))
+        return True
+    elif text in change_topic_command_en:
+        increase_chat_sn(user_id)
+        line_bot_api.reply_message(event.reply_token, 
+           TextSendMessage(text='''Topic changed, let's continue chatting.
+If I keep saying weird things again, please enter 'change topic'.'''))
+        
+        return True
+    return False
+
+
+# In[ ]:
+
+
+from flask import Flask, request, abort
+import subprocess
 
 from linebot import (
     LineBotApi, WebhookHandler
@@ -304,179 +398,20 @@ from linebot.models import (
     PostbackEvent,
     PostbackTemplateAction,
     AudioMessage,
-    AudioSendMessage,
-    Sender
+    AudioSendMessage
 )
 
-
-# In[ ]:
-
-
-
-
-
-# In[13]:
-
-
-def process_text_message(event):
-    text = event.message.text
-    
-    if process_command(event, text):
-        return True
-    
-    send_GPT3_response(text, event)
-
-
-# In[ ]:
-
-
-
-
-
-# In[14]:
-
-
-def get_bots(bot_id):
-    return GPT3_chat_bots_col.find_one({'id': bot_id})
-
-
-# In[ ]:
-
-
-
-
-
-# In[15]:
-
-
-def send_GPT3_response(text, event):
-    
-    user = get_user(event)
-    user_profile = line_bot_api.get_profile(event.source.user_id)
-    
-    translated_result = translate(text, target="en")
-    
-    text_en = translated_result['translatedText']
-    text_en = norm_text(text_en)
-    text_source = translated_result['detectedSourceLanguage']
-    
-    bots_id = user['bots']
-    if len(bots_id) == 0:
-        bots_id = ['棒男孩']
-    bots = list(map(get_bots, bots_id))
-    
-    message = []
-    tasks = [] #TODO: 如果需要照順序回要改成寫 mapping
-    for bot in bots:
-        t = doThreading(thread_GPT3, args = (message, event, text, text_en, bot, user_profile, user, text_source))
-        tasks.append(t)
-        #thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_source)
-    for t in tasks:
-        t.join()
-
-    line_bot_api.reply_message(event.reply_token, message)
-
-
-# In[16]:
-
-
-def thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_source):
-    response_text = ""
-    while response_text == "":
-        response_text_en = generate_GPT3_response(event, text_en, bot)
-        response_text_en = norm_text(response_text_en)
-
-        if text_source[:2] == "zh":
-            response_text = translate(response_text_en, target="zh-TW")['translatedText']
-        elif text_source != 'en':
-            response_text = translate(response_text_en, target=text_source)['translatedText']
-        else:
-            response_text = response_text_en
-
-    print("----")
-    print(f"From: {bot['id']}")
-    print('--Origin--')
-    print(f'{text_en} => {response_text_en}')
-    print('--Translated--')
-    print(f'{text} => {response_text}')
-    print('========')
-
-
-    GPT3_chat_history_col.insert_one({
-        'input_text': text,
-        'input_text_en': text_en,
-        'response_text_en': response_text_en,
-        'response_text': response_text,
-        'event_message_id': event.message.id,
-        'user': {
-            "display_name": user_profile.display_name,
-            "user_id": event.source.user_id,
-            "sn": user['sn'],
-        },
-        'bot_id': bot['id'],
-        "time": datetime.datetime.now(),
-        "input_type": 'text',
-    })
-
-    message.append(
-        TextSendMessage(
-            text=response_text, 
-            sender = Sender(name = bot['name'].replace("_", " "),
-                            icon_url = bot['img_url']))
-            )
-
-
-# In[17]:
-
-
-change_topic_command_zh = [
-    '換個話題',
-]
-change_topic_command_en = [
-    'change topic'
-]
-
-def increase_chat_sn(user_id):
-    GPT3_chat_user_col.update_one({
-            "user_id": user_id
-        },{
-            "$inc": {'sn': 1}
-        })
-
-def process_command(event, text):
-    user_id = event.source.user_id
-    user = get_user(event)
-    
-    if text in change_topic_command_zh:
-        increase_chat_sn(user_id)
-        line_bot_api.reply_message(event.reply_token, 
-           TextSendMessage(text='''已更換話題，讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「換個話題」以繼續對話'''))
-        return True
-    elif text in change_topic_command_en:
-        increase_chat_sn(user_id)
-        line_bot_api.reply_message(event.reply_token, 
-           TextSendMessage(text='''Topic changed, let's continue chatting.\nIf I keep saying weird things again, please enter 'change topic'.'''))
-        return True
-    
-    return False
-
-
-# In[18]:
-
-
-from flask import Flask, request, abort, render_template, send_from_directory
-import subprocess
-
-
-
-app = Flask(__name__, template_folder = 'dist')
+app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.getenv('CHANNEL_ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
 
+import pymongo
+MongoClient = pymongo.MongoClient(os.getenv('MONGODB_URI'))
+GPT3_chat_history_col = MongoClient["GPT3_Chatbot"]["GPT3_Chat"]
+GPT3_chat_user_col = MongoClient["GPT3_Chatbot"]["Users"]
 
-
-@app.route("/api/v1/line_bot", methods=['POST'])
+@app.route("/linebot", methods=['POST'])
 def callback():
     # get X-Line-Signature header value
     signature = request.headers['X-Line-Signature']
@@ -504,81 +439,11 @@ def handleAudioMessage(event):
     doThreading(process_voice_message, args = (event))
     
 
-
-# In[19]:
-
-
-@app.route("/api/v1/status", methods=['GET'])
-def get_status():
-    user_count = GPT3_chat_user_col.estimated_document_count()
-    chat_count = GPT3_chat_history_col.estimated_document_count()
-    return {"user_count": user_count, "chat_count": chat_count}
     
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
 
 AAA = []
 if __name__ == "__main__":
-    from flask_cors import CORS
-    CORS(app)
     app.run(port=os.getenv('API_PORT'))
-
-
-# In[ ]:
-
-
-os.system('cd ../frontend && rm -rf dist && unzip -qq dist && echo "Update Frontend Success"')
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:
