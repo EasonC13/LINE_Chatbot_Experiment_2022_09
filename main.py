@@ -6,11 +6,12 @@
 
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
+load_dotenv('/eason/.server.env')
 
 import pymongo
-MongoClient = pymongo.MongoClient(os.getenv('MONGODB_URI'))
+MongoClient = pymongo.MongoClient(f"mongodb://{os.getenv('mongo_user')}:{os.getenv('mongo_pw')}@localhost:27081")
+
 GPT3_chat_history_col = MongoClient["GPT3_Chatbot"]["GPT3_Chat"]
 GPT3_chat_user_col = MongoClient["GPT3_Chatbot"]["Users"]
 GPT3_chat_bots_col = MongoClient["GPT3_Chatbot"]["Bots"]
@@ -198,6 +199,8 @@ def get_user(event):
             'sn': 0
         }
         GPT3_chat_user_col.insert_one(user)
+    
+    print("YEEE", user)
     return user
 
 
@@ -548,7 +551,7 @@ if __name__ == "__main__":
 # In[ ]:
 
 
-os.system('cd ../frontend && rm -rf dist && unzip -qq dist && echo "Update Frontend Success"')
+#os.system('cd ../frontend && rm -rf dist && unzip -qq dist && echo "Update Frontend Success"')
 
 
 # In[ ]:
