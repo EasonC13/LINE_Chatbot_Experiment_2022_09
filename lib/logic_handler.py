@@ -7,7 +7,7 @@ from lib.db import (
     GPT3_chat_history_col,
     get_user,
     Total_Conditions_Count,
-    Tmp_Resting_col,
+    Resting_Notify_col,
 )
 from lib.imp import *
 
@@ -246,7 +246,7 @@ def get_finish_info(user):
                                 "contents": [
                                     {
                                         "type": "text",
-                                        "text": "稍微休息一下，然後再次開始實驗吧。系統將於三分鐘後主動提醒您繼續實驗。您也可選擇「跳過休息」直接開始接下來的實驗",
+                                        "text": "稍微休息一下，然後再次開始實驗吧！休息的目的是要放鬆身心，排除先前實驗對後續實驗的干擾。系統將於三分鐘後主動提醒您繼續實驗。您也可選擇「跳過休息」直接開始下一階段",
                                         "wrap": True,
                                         "color": "#666666",
                                         "size": "sm",
@@ -354,6 +354,152 @@ def get_resting_finish_flexmsg(user):
     )
 
 
+def get_resting_finish_flexmsg(user):
+    return FlexSendMessage(
+        alt_text=f"休息時間到",
+        contents={
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "休息時間到",
+                        "weight": "bold",
+                        "size": "xl",
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "提醒您，休息時間到了，可以繼續實驗囉，當然想再休息一下也沒問題～",
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 5,
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "message",
+                            "label": "繼續實驗",
+                            "text": "我準備好繼續了",
+                        },
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [],
+                        "margin": "sm",
+                    },
+                ],
+                "flex": 0,
+            },
+        },
+    )
+
+
+def get_final_flexmsg(user):
+    return FlexSendMessage(
+        alt_text=f"最終問卷",
+        contents={
+            "type": "bubble",
+            "body": {
+                "type": "box",
+                "layout": "vertical",
+                "contents": [
+                    {
+                        "type": "text",
+                        "text": "最終量表測驗與資料填寫",
+                        "weight": "bold",
+                        "size": "xl",
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "margin": "lg",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "box",
+                                "layout": "baseline",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "點選下方「進行最終問卷」並填寫，之後點選「結束」結束所有實驗流程",
+                                        "wrap": True,
+                                        "color": "#666666",
+                                        "size": "sm",
+                                        "flex": 5,
+                                    }
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            },
+            "footer": {
+                "type": "box",
+                "layout": "vertical",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "uri",
+                            "label": "進行最終問卷",
+                            "uri": f"https://exp1.eason.best/final?id={user['user_id']}",
+                        },
+                    },
+                    {
+                        "type": "button",
+                        "style": "link",
+                        "height": "sm",
+                        "action": {
+                            "type": "message",
+                            "label": "結束",
+                            "text": "我已完成所有實驗流程",
+                        },
+                    },
+                    {
+                        "type": "box",
+                        "layout": "vertical",
+                        "contents": [],
+                        "margin": "sm",
+                    },
+                ],
+                "flex": 0,
+            },
+        },
+    )
+
+
 change_topic_command_zh = [
     "換個話題",
 ]
@@ -370,111 +516,107 @@ def process_command(event, text):
 
     if user["status"] == "New Starter":
         if text == "我已完成閱讀":
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(
-                    text="""偵測到您尚未完成閱讀，請閱讀完所有內容後於最下方點選「開始實驗」，收到頁面告知可以回來才算完成喔！"""
-                ),
-            )
-        elif text == "Ready to go":
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text='''已更新狀態為 "Ready to go"''')
-            )
-            update_user_status(user["user_id"], "Ready to go")
+            if True:
+                user["status"] = randomly_get_next_task(user)
+                update_user_status(user["user_id"], user["status"])
+                pre_test_info = get_pre_test_info(user)
+                line_bot_api.reply_message(event.reply_token, pre_test_info)
+            else:
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    TextSendMessage(
+                        text="""偵測到您尚未完成閱讀，請閱讀完所有內容後於最下方點選「開始實驗」，收到頁面告知可以回來才算完成喔！"""
+                    ),
+                )
         else:
             line_bot_api.reply_message(
                 event.reply_token,
-                FlexSendMessage(
-                    alt_text=f"歡迎來到此聊天機器人實驗，請先點選下方連結閱讀實驗指引並確認開始實驗\n\nhttps://exp1.eason.best/starter?id={user_id}\n\n完成後請點選「完成」",
-                    contents={
-                        "type": "bubble",
-                        "hero": {
-                            "type": "image",
-                            "url": "https://i.imgur.com/ufIifp6.png",
-                            "size": "full",
-                            "aspectRatio": "20:13",
-                            "aspectMode": "cover",
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "contents": [
-                                {
-                                    "type": "text",
-                                    "text": "歡迎來到聊天機器人實驗",
-                                    "weight": "bold",
-                                    "size": "xl",
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "margin": "lg",
-                                    "spacing": "sm",
-                                    "contents": [
-                                        {
-                                            "type": "box",
-                                            "layout": "baseline",
-                                            "spacing": "sm",
-                                            "contents": [
-                                                {
-                                                    "type": "text",
-                                                    "text": "點選下方「閱讀指引」觀看實驗說明並勾選同意，之後點選「下一步」開始實驗",
-                                                    "wrap": True,
-                                                    "color": "#666666",
-                                                    "size": "sm",
-                                                    "flex": 5,
-                                                }
-                                            ],
-                                        }
-                                    ],
-                                },
-                            ],
-                        },
-                        "footer": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "spacing": "sm",
-                            "contents": [
-                                {
-                                    "type": "button",
-                                    "style": "link",
-                                    "height": "sm",
-                                    "action": {
-                                        "type": "uri",
-                                        "label": "閱讀實驗指引",
-                                        "uri": "https://exp1.eason.best/starter?id=userid",
+                [
+                    FlexSendMessage(
+                        alt_text=f"歡迎來到此聊天機器人實驗，請先點選下方連結閱讀實驗指引並確認開始實驗\n\nhttps://exp1.eason.best/starter?id={user_id}\n\n完成後請點選「完成」",
+                        contents={
+                            "type": "bubble",
+                            "hero": {
+                                "type": "image",
+                                "url": "https://i.imgur.com/ufIifp6.png",
+                                "size": "full",
+                                "aspectRatio": "20:13",
+                                "aspectMode": "cover",
+                            },
+                            "body": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "contents": [
+                                    {
+                                        "type": "text",
+                                        "text": "歡迎來到聊天機器人實驗",
+                                        "weight": "bold",
+                                        "size": "xl",
                                     },
-                                },
-                                {
-                                    "type": "button",
-                                    "style": "link",
-                                    "height": "sm",
-                                    "action": {
-                                        "type": "message",
-                                        "label": "下一步",
-                                        "text": "我已完成閱讀",
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "margin": "lg",
+                                        "spacing": "sm",
+                                        "contents": [
+                                            {
+                                                "type": "box",
+                                                "layout": "baseline",
+                                                "spacing": "sm",
+                                                "contents": [
+                                                    {
+                                                        "type": "text",
+                                                        "text": "點選下方「閱讀指引」觀看實驗說明並勾選同意，之後點選「下一步」開始實驗",
+                                                        "wrap": True,
+                                                        "color": "#666666",
+                                                        "size": "sm",
+                                                        "flex": 5,
+                                                    }
+                                                ],
+                                            }
+                                        ],
                                     },
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [],
-                                    "margin": "sm",
-                                },
-                            ],
-                            "flex": 0,
+                                ],
+                            },
+                            "footer": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "sm",
+                                "contents": [
+                                    {
+                                        "type": "button",
+                                        "style": "link",
+                                        "height": "sm",
+                                        "action": {
+                                            "type": "uri",
+                                            "label": "閱讀實驗指引",
+                                            "uri": "https://exp1.eason.best/starter?id=userid",
+                                        },
+                                    },
+                                    {
+                                        "type": "button",
+                                        "style": "link",
+                                        "height": "sm",
+                                        "action": {
+                                            "type": "message",
+                                            "label": "下一步",
+                                            "text": "我已完成閱讀",
+                                        },
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "contents": [],
+                                        "margin": "sm",
+                                    },
+                                ],
+                                "flex": 0,
+                            },
                         },
-                    },
-                ),
+                    ),
+                    TextSendMessage("歡迎來到此聊天機器人實驗，請先點選上方「閱讀實驗指引」並完成，之後選擇「下一步」開始實驗"),
+                ],
             )
-        return True
-    elif user["status"] == "Ready to go":
-        # Arrange a group
-        user["status"] = randomly_get_next_task(user)
-        update_user_status(user["user_id"], user["status"])
-        pre_test_info = get_pre_test_info(user)
-        line_bot_api.reply_message(event.reply_token, pre_test_info)
-
         return True
     elif "Condition_" in user["status"] and "_Pretest" in user["status"]:
         if text == "我已完成前測":
@@ -502,6 +644,13 @@ def process_command(event, text):
         )
         return True
     elif "Condition_" in user["status"] and "_Finish" in user["status"]:
+        if text == "我決定跳過休息":
+            notify = sorted(
+                list(Resting_Notify_col.find()),
+                key=lambda x: x["timeStamp"],
+                reverse=True,
+            )[0]
+            Resting_Notify_col.update_one(notify, {"$set": {"skip": True}})
         if text not in ["我準備好繼續了", "我決定跳過休息"]:
             line_bot_api.reply_message(
                 event.reply_token,
@@ -521,7 +670,7 @@ def process_command(event, text):
             line_bot_api.reply_message(
                 event.reply_token,
                 [
-                    TextSendMessage(text=f"進入 Final Test"),
+                    get_final_flexmsg(user),
                 ],
             )
     elif "Condition_" in user["status"] and "_Posttest" in user["status"]:
@@ -546,7 +695,7 @@ def process_command(event, text):
                 from datetime import datetime
 
                 now = datetime.now()
-                Tmp_Resting_col.insert_one(
+                Resting_Notify_col.insert_one(
                     {
                         "user_id": user["user_id"],
                         "user_status": user["status"],
@@ -555,7 +704,7 @@ def process_command(event, text):
                     }
                 )
                 time.sleep(10)
-                res = Tmp_Resting_col.find_one(
+                res = Resting_Notify_col.find_one(
                     {"user_id": user["user_id"], "timeStamp": now}
                 )
                 if res["skip"] == False:
@@ -568,13 +717,42 @@ def process_command(event, text):
                 pass
         post_test_info = get_post_test_info(user)
         line_bot_api.reply_message(
-            user["user_id"],
+            event.reply_token,
             [
                 post_test_info,
                 TextSendMessage(text="請依照上方卡片指示，點選「進行後測」做好感度評估，之後點選「下一步」繼續實驗"),
             ],
         )
         return True
+    elif "Finish" == user["status"]:
+        line_bot_api.reply_message(
+            event.reply_token,
+            [
+                TextSendMessage(text="感謝您完成所有實驗流程，受試者報酬將於一週後匯款給您。"),
+                TextSendMessage(text="如有任何疑問或其他回饋請 Email 至主持人 eason.tw.chen@gmail.com"),
+            ],
+        )
+    elif "Final_Test" == user["status"]:
+        # Checking
+        if True:
+            update_user_status(user["user_id"], "Finish")
+            line_bot_api.reply_message(
+                event.reply_token,
+                [
+                    TextSendMessage(text="感謝您完成所有實驗流程，受試者報酬將於一週後匯款給您。"),
+                ],
+            )
+        else:
+            line_bot_api.reply_message(
+                event.reply_token,
+                [
+                    get_final_flexmsg(user),
+                    TextSendMessage(
+                        text="偵測到您尚未完成最終資料填寫，請點選上方之「進行最終問卷」並填寫完成送出，才能完成實驗收到受試者報酬喔～"
+                    ),
+                ],
+            )
+        pass
     elif text in change_topic_command_zh:
         increase_chat_sn(user_id)
         line_bot_api.reply_message(

@@ -14,14 +14,13 @@ DB_NAME = "chatbot_experiment_2022_09"
 GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
 GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
 GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]
-Tmp_Resting_col = MongoClient[DB_NAME]["Waiting"]
+Resting_Notify_col = MongoClient[DB_NAME]["Resting_Notify"]
 
 from lib.common import line_bot_api, handler, doThreading
 
 Total_Conditions_Count = 3
 ALL_STATUS = [
     "New Starter",
-    "Ready to go",
     "Condition_A_Pretest",
     "Condition_A_Chatting",
     "Condition_A_Posttest",
@@ -35,6 +34,7 @@ ALL_STATUS = [
     "Condition_C_Posttest",
     "Condition_C_Finish",
     "Final_Test",
+    "Finish",
 ]
 
 
