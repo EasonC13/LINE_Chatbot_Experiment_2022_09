@@ -1,10 +1,14 @@
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
-load_dotenv('/eason/.server.env')
+load_dotenv("/eason/.server.env")
 
 import pymongo
-MongoClient = pymongo.MongoClient(f"mongodb://{os.getenv('mongo_user')}:{os.getenv('mongo_pw')}@localhost:27081")
+
+MongoClient = pymongo.MongoClient(
+    f"mongodb://{os.getenv('mongo_user')}:{os.getenv('mongo_pw')}@localhost:27081"
+)
 
 DB_NAME = "chatbot_experiment_2022_09"
 GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
@@ -14,9 +18,7 @@ GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]
 
 from translate import translate
 
-from linebot.exceptions import (
-    InvalidSignatureError
-)
+from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent,
     TextMessage,
@@ -29,7 +31,7 @@ from linebot.models import (
     PostbackTemplateAction,
     AudioMessage,
     AudioSendMessage,
-    Sender
+    Sender,
 )
 
 
@@ -43,7 +45,7 @@ import asyncio
 import subprocess
 
 
-app = FastAPI(title="Chatbot Experience", version = 1)
+app = FastAPI(title="Chatbot Experience", version=1)
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,10 +57,11 @@ app.add_middleware(
 
 from lib.common import line_bot_api, handler, doThreading
 
+
 @app.post("/api/v1/line_bot")
 async def callback(request: Request):
     # get X-Line-Signature header value
-    signature = request.headers['X-Line-Signature']
+    signature = request.headers["X-Line-Signature"]
 
     # get request body as text
     body = await request.body()
@@ -69,20 +72,26 @@ async def callback(request: Request):
     except InvalidSignatureError:
         raise HTTPException(status_code=400, detail="Missing Parameter")
 
-    return 'OK'
+    return "OK"
+
 
 from lib.logic_handler import process_text_message
 from lib.voice import process_voice_message
 
+
 @handler.add(MessageEvent, message=TextMessage)
 def handleTextMessage(event):
-    doThreading(process_text_message, args = (event))
+    doThreading(process_text_message, args=(event))
+
 
 @handler.add(MessageEvent, message=AudioMessage)
 def handleAudioMessage(event):
-    doThreading(process_voice_message, args = (event))
-    
+    doThreading(process_voice_message, args=(event))
 
+
+from api.routes import router as api_v1_router
+
+app.include_router(api_v1_router, prefix="/api/v1")
 
 
 @app.get("/api/v1/status")
@@ -90,7 +99,7 @@ def get_status():
     user_count = GPT3_chat_user_col.estimated_document_count()
     chat_count = GPT3_chat_history_col.estimated_document_count()
     return {"user_count": user_count, "chat_count": chat_count}
-    
+
 
 if __name__ == "__main__":
-    app.run(port=os.getenv('API_PORT'))
+    app.run(port=os.getenv("API_PORT"))

@@ -16,6 +16,11 @@ GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
 GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]
 Resting_Notify_col = MongoClient[DB_NAME]["Resting_Notify"]
 
+
+def get_database():
+    return MongoClient[DB_NAME]
+
+
 from lib.common import line_bot_api, handler, doThreading
 
 Total_Conditions_Count = 3
