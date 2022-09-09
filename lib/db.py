@@ -15,6 +15,8 @@ GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
 GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
 GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]
 Resting_Notify_col = MongoClient[DB_NAME]["Resting_Notify"]
+Big5_Col = MongoClient[DB_NAME]["Users_Big5"]
+AttachmentStyle_Col = MongoClient[DB_NAME]["Users_AttachmentStyle"]
 
 
 def get_database():
