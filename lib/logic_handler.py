@@ -10,7 +10,7 @@ from lib.db import (
     Resting_Notify_col,
 )
 from lib.imp import *
-
+import requests
 import time
 from lib.gpt3_handler import send_GPT3_response
 
@@ -62,7 +62,7 @@ def randomly_get_next_task(user):
 
 def get_pre_test_info(user):
     return FlexSendMessage(
-        alt_text=f"歡迎來到此聊天機器人實驗，請先點選下方連結閱讀實驗指引並確認開始實驗\n\nhttps://exp1.eason.best/starter?id={user['user_id']}\n\n完成後請點選「完成」",
+        alt_text=f"請使用支援的裝置繼續",
         contents={
             "type": "bubble",
             "hero": {
@@ -515,8 +515,12 @@ def process_command(event, text):
     user = get_user(user_id)
 
     if user["status"] == "New Starter":
-        if text == "我已完成閱讀":
-            if True:
+        if text == "我已完成初始階段":
+            res = requests.get(
+                f"https://exp1.eason.best/api/v1/starter/isfinish?userId={user['user_id']}"
+            )
+            isFinish = res.json()["isFinish"]
+            if isFinish:
                 user["status"] = randomly_get_next_task(user)
                 update_user_status(user["user_id"], user["status"])
                 pre_test_info = get_pre_test_info(user)
@@ -589,8 +593,8 @@ def process_command(event, text):
                                         "height": "sm",
                                         "action": {
                                             "type": "uri",
-                                            "label": "閱讀實驗指引",
-                                            "uri": "https://exp1.eason.best/starter?id=userid",
+                                            "label": "進行初始階段",
+                                            "uri": f"https://exp1.eason.best/starter?id={user_id}",
                                         },
                                     },
                                     {
@@ -600,7 +604,7 @@ def process_command(event, text):
                                         "action": {
                                             "type": "message",
                                             "label": "下一步",
-                                            "text": "我已完成閱讀",
+                                            "text": "我已完成初始階段",
                                         },
                                     },
                                     {
@@ -772,13 +776,15 @@ def process_command(event, text):
     elif "Condition_" in user["status"] and "_Chatting" in user["status"]:
         user["round"] += 1
         update_user_round(user, round=user["round"])
+        from lib.gpt3_handler import send_GPT3_response
 
-        line_bot_api.reply_message(
-            event.reply_token,
-            [
-                TextSendMessage(text="收，但引擎還沒串"),
-            ],
-        )
+        send_GPT3_response(text, event)
+        # line_bot_api.reply_message(
+        #     event.reply_token,
+        #     [
+        #         TextSendMessage(text="收，但引擎還沒串"),
+        #     ],
+        # )
         if user["round"] > 5:
             user["status"] = user["status"].replace("_Chatting", "_Posttest")
             post_test_info = get_post_test_info(user)

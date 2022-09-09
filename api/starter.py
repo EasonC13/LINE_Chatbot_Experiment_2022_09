@@ -79,7 +79,7 @@ async def big5(data: attachmentBody):
     return {"acknowledged": done}
 
 
-@router.get("/starter/isfinish")
+@router.get("/isfinish")
 async def big5(userId: str):
     try:
         AttachmentStyle = AttachmentStyle_Col.find_one({"user_id": userId})

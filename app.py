@@ -1,4 +1,5 @@
 import os
+from sys import prefix
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,7 +46,7 @@ import asyncio
 import subprocess
 
 
-app = FastAPI(title="Chatbot Experience", version=1)
+app = FastAPI(title="Chatbot Experience", version=1, prefix="/api")
 
 app.add_middleware(
     CORSMiddleware,
@@ -100,6 +101,16 @@ def get_status():
     chat_count = GPT3_chat_history_col.estimated_document_count()
     return {"user_count": user_count, "chat_count": chat_count}
 
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount(
+    "/",
+    StaticFiles(
+        directory="/home/eason/Python/WEB/service/LINE_Bot/2022_09_chatbot_experiment/frontend/dist",
+        html=True,
+    ),
+)
 
 if __name__ == "__main__":
     app.run(port=os.getenv("API_PORT"))

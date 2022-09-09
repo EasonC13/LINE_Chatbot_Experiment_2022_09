@@ -57,3 +57,12 @@ async def ratings(data: ratingBody):
         done = False
 
     return {"acknowledged": done}
+
+
+@router.get("/isfinish")
+async def big5(userId: str):
+    try:
+        Bots_Rating = Bots_Rating_Col.find_one({"user_id": data.userId})
+        return {"isFinish": bool(Bots_Rating)}
+    except:
+        return {"isFinish": False}
