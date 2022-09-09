@@ -4,3 +4,5 @@
 .env
 *.ipynb_check*
 *.ipynb
+__pycache__/
+*.pyc

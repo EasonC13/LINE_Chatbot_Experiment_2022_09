@@ -16,7 +16,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 import secrets
 
-from lib.db import GPT3_chat_user_col, GPT3_chat_bots_col
+from lib.db import GPT3_chat_user_col, GPT3_chat_bots_col, Bots_Rating_Col
 
 from datetime import datetime
 
@@ -26,4 +26,34 @@ import json
 
 @router.get("/bots")
 async def bots(condition: str):
-    bots = list(GPT3_chat_bots_col.find({"condition": condition}, {"_id": False}))
+    # bots = list(GPT3_chat_bots_col.find({"condition": condition}, {"_id": False}))
+    bots = list(GPT3_chat_bots_col.find({}, {"_id": False}))
+    return bots
+
+
+class ratingBody(BaseModel):
+    userId: str
+    ratings: str
+    condition: str
+    status: str
+
+
+@router.post("/ratings", responses={401: {}, 200: {}})
+async def ratings(data: ratingBody):
+    user = GPT3_chat_user_col.find_one({"user_id": data.userId})
+    if user:
+        ratings = json.loads(data.ratings)
+        res = Bots_Rating_Col.insert_one(
+            {
+                "user_id": data.userId,
+                "ratings": ratings,
+                "condition": data.condition,
+                "status": data.status,
+                "add_time": datetime.now(),
+            }
+        )
+        done = res.acknowledged
+    else:
+        done = False
+
+    return {"acknowledged": done}
