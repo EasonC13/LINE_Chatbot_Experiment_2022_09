@@ -197,6 +197,7 @@ def thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_sou
             "bot_id": bot["id"],
             "time": datetime.datetime.now(),
             "input_type": "text",
+            "condition": user["status"],
         }
     )
 
