@@ -12,6 +12,7 @@ MongoClient = pymongo.MongoClient(
 
 DB_NAME = "chatbot_experiment_2022_09"
 GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
+GPT3_chat_log_col = MongoClient[DB_NAME]["GPT3_Chat_log"]
 GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
 GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]
 Resting_Notify_col = MongoClient[DB_NAME]["Resting_Notify"]
@@ -46,10 +47,10 @@ ALL_STATUS = [
 ]
 
 
-def get_user(user_id):
+def get_user(user_id, want_id=False):
     user_profile = line_bot_api.get_profile(user_id)
 
-    user = GPT3_chat_user_col.find_one({"user_id": user_id})
+    user = GPT3_chat_user_col.find_one({"user_id": user_id}, {"_id": want_id})
     if user == None:
         user = {
             "user_id": user_id,

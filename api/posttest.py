@@ -16,7 +16,12 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 import secrets
 
-from lib.db import GPT3_chat_user_col, GPT3_chat_bots_col, Bots_Rating_Col
+from lib.db import (
+    GPT3_chat_user_col,
+    GPT3_chat_bots_col,
+    Bots_Rating_Col,
+    GPT3_chat_log_col,
+)
 
 from datetime import datetime
 
@@ -50,7 +55,7 @@ async def ratings(data: ratingBody):
                 "condition": data.condition,
                 "status": data.status,
                 "add_time": datetime.now(),
-                "from": "pretest_api",
+                "from": "posttest_api",
             }
         )
         done = res.acknowledged
@@ -61,9 +66,21 @@ async def ratings(data: ratingBody):
 
 
 @router.get("/isfinish")
-async def big5(userId: str, status: str):
-    try:
-        Bots_Rating = Bots_Rating_Col.find_one({"user_id": userId, "status": status})
-        return {"isFinish": bool(Bots_Rating)}
-    except:
-        return {"isFinish": False}
+async def big5(userId: str):
+    # TODO
+    return {"isFinish": True}
+
+
+@router.get("/chat_history")
+async def get_chat_history(
+    userId: str = "Ub830fb81ec2de64d825b4ab2f6b7472e",
+    condition: str = "Condition_B",
+):
+    condition = condition + "_Chatting"
+    res = GPT3_chat_log_col.find(
+        {"user_id": userId, "condition": condition}, {"_id": False}
+    )
+    res = list(res)
+    for r in res:
+        del r["user"]["_id"]
+    return {"chats": res}

@@ -624,8 +624,11 @@ def process_command(event, text):
         return True
     elif "Condition_" in user["status"] and "_Pretest" in user["status"]:
         if text == "我已完成前測":
-            # Checking
-            if True:
+            res = requests.get(
+                f"https://exp1.eason.best/api/v1/pretest/isfinish?userId={user['user_id']}&status={user['status']}"
+            )
+            isFinish = res.json()["isFinish"]
+            if isFinish:
                 user["status"] = user["status"].replace("_Pretest", "_Chatting")
                 update_user_status(user["user_id"], user["status"])
                 update_user_round(user, round=0)
@@ -785,7 +788,7 @@ def process_command(event, text):
         #         TextSendMessage(text="收，但引擎還沒串"),
         #     ],
         # )
-        if user["round"] > 5:
+        if user["round"] > 10:
             user["status"] = user["status"].replace("_Chatting", "_Posttest")
             post_test_info = get_post_test_info(user)
             line_bot_api.push_message(user["user_id"], post_test_info)
