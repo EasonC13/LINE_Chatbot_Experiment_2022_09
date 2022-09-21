@@ -21,6 +21,7 @@ from lib.db import (
     GPT3_chat_bots_col,
     Bots_Rating_Col,
     GPT3_chat_log_col,
+    UEQ_Col,
 )
 
 from datetime import datetime
@@ -65,12 +66,6 @@ async def ratings(data: ratingBody):
     return {"acknowledged": done}
 
 
-@router.get("/isfinish")
-async def big5(userId: str):
-    # TODO
-    return {"isFinish": True}
-
-
 @router.get("/chat_history")
 async def get_chat_history(
     userId: str = "Ub830fb81ec2de64d825b4ab2f6b7472e",
@@ -84,3 +79,34 @@ async def get_chat_history(
     for r in res:
         del r["user"]["_id"]
     return {"chats": res}
+
+
+class ueqBody(BaseModel):
+    all_ueq: str
+    userId: str
+    condition: str
+    status: str
+
+
+@router.post("/ueq")
+async def add_ueq_result(data: ueqBody):
+    all_ueq = json.loads(data.all_ueq)
+    all_ueq_list = []
+    for key, value in all_ueq.items():
+        all_ueq_list.append(value)
+    UEQ_Col.insert_one(
+        {
+            "user_id": data.userId,
+            "condition": data.condition,
+            "status": data.status,
+            "all_ueq": all_ueq,
+            "all_ueq_list": all_ueq_list,
+        }
+    )
+    pass
+
+
+@router.get("/isfinish")
+async def big5(userId: str):
+    # TODO
+    return {"isFinish": True}

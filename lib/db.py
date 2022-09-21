@@ -19,6 +19,7 @@ Resting_Notify_col = MongoClient[DB_NAME]["Resting_Notify"]
 Big5_Col = MongoClient[DB_NAME]["Users_Big5"]
 AttachmentStyle_Col = MongoClient[DB_NAME]["Users_AttachmentStyle"]
 Bots_Rating_Col = MongoClient[DB_NAME]["Bots_Rating"]
+UEQ_Col = MongoClient[DB_NAME]["UEQ"]
 
 
 def get_database():
