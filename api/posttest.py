@@ -21,7 +21,7 @@ from lib.db import (
     GPT3_chat_bots_col,
     Bots_Rating_Col,
     GPT3_chat_log_col,
-    UEQ_Col,
+    Posttest_Questionnaire_Col,
 )
 
 from datetime import datetime
@@ -82,28 +82,34 @@ async def get_chat_history(
 
 
 class ueqBody(BaseModel):
-    all_ueq: str
+    all_rating: str
     userId: str
     condition: str
     status: str
 
 
-@router.post("/ueq")
-async def add_ueq_result(data: ueqBody):
-    all_ueq = json.loads(data.all_ueq)
-    all_ueq_list = []
-    for key, value in all_ueq.items():
-        all_ueq_list.append(value)
-    UEQ_Col.insert_one(
-        {
-            "user_id": data.userId,
-            "condition": data.condition,
-            "status": data.status,
-            "all_ueq": all_ueq,
-            "all_ueq_list": all_ueq_list,
-        }
-    )
-    pass
+@router.post("/questionnaire")
+async def add_ueq_result(data: ueqBody, responses={401: {}, 200: {}}):
+    user = GPT3_chat_user_col.find_one({"user_id": data.userId})
+    if user:
+        all_rating = json.loads(data.all_rating)
+        all_rating_list = []
+        for key, value in all_rating.items():
+            all_rating_list.append(value)
+
+        res = Posttest_Questionnaire_Col.insert_one(
+            {
+                "user_id": data.userId,
+                "condition": data.condition,
+                "status": data.status,
+                "all_rating": all_rating,
+                "all_rating_list": all_rating_list,
+            }
+        )
+        done = res.acknowledged
+    else:
+        done = False
+    return done
 
 
 @router.get("/isfinish")
