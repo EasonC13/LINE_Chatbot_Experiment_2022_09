@@ -8,11 +8,12 @@ from lib.db import (
     get_user,
     Total_Conditions_Count,
     Resting_Notify_col,
+    TAG_col,
 )
 from lib.imp import *
 import requests
 import time
-from lib.gpt3_handler import send_GPT3_response
+from lib.chat_handler import send_GPT3_response, process_tag
 
 
 def process_text_message(event):
@@ -686,11 +687,7 @@ def process_command(event, text):
             if True:
                 user["status"] = user["status"].replace("_Posttest", "_Finish")
                 update_user_status(user["user_id"], user["status"])
-                # if (
-                #     len(set(filter(lambda x: "_Chatting" in x, user["status_history"])))
-                #     == Total_Conditions_Count
-                # ):
-                #     pass
+
                 finish_info = get_finish_info(user)
                 line_bot_api.reply_message(
                     event.reply_token,
@@ -777,9 +774,11 @@ def process_command(event, text):
         )
         return True
     elif "Condition_" in user["status"] and "_Chatting" in user["status"]:
+        if "＠" == text[0] and process_tag(user, event):
+            return True
         user["round"] += 1
         update_user_round(user, round=user["round"])
-        from lib.gpt3_handler import send_GPT3_response
+        from lib.chat_handler import send_GPT3_response
 
         send_GPT3_response(text, event)
         # line_bot_api.reply_message(

@@ -5,6 +5,7 @@ from lib.db import (
     GPT3_chat_history_col,
     GPT3_chat_log_col,
     get_user,
+    TAG_col,
 )
 import os
 from lib.common import line_bot_api, handler, doThreading
@@ -28,6 +29,11 @@ from linebot.models import (
     AudioMessage,
     AudioSendMessage,
     Sender,
+    QuickReply,
+    QuickReplyButton,
+    PostbackAction,
+    QuickReplyButton,
+    MessageAction,
 )
 import subprocess
 
@@ -44,7 +50,6 @@ import numpy as np
 import io
 
 from bson.objectid import ObjectId
-from lib.db import GPT3_chat_bots_col
 
 
 def create_prompt(prompt, prev_msgs, text, num=-3):
@@ -111,7 +116,7 @@ def generate_GPT3_response(event, text, bot, condition):
     prev_responses = list(map(lambda x: x["response_text_en"], prev_msgs[-3:]))
     count = np.unique(prev_responses, return_counts=True)[1]
 
-    # print(prompt + response_text, end="\n")
+    print(prompt + response_text, end="\n")
 
     return response_text
 
@@ -141,10 +146,23 @@ def send_GPT3_response(text, event):
     condition = user["status"].split("_")[1]
     bots = list(GPT3_chat_bots_col.find({"condition": condition}))
 
+    reply_to = TAG_col.find_one_and_update(
+        {
+            "user": {
+                "user_id": event.source.user_id,
+                "sn": user["sn"],
+                "status": user["status"],
+            },
+            "expired": False,
+        },
+        {"$set": {"expired": True}},
+    )
+
     message = []
     tasks = []
     now = datetime.datetime.now()
     responses_log = []
+
     for bot in bots:
         t = doThreading(
             thread_GPT3,
@@ -159,6 +177,8 @@ def send_GPT3_response(text, event):
                 text_source,
                 now,
                 responses_log,
+                bots,
+                reply_to,
             ),
         )
         tasks.append(t)
@@ -167,6 +187,7 @@ def send_GPT3_response(text, event):
         t.join()
 
     # print(message)
+
     line_bot_api.reply_message(event.reply_token, message)
     data = {
         "user": user,
@@ -177,6 +198,8 @@ def send_GPT3_response(text, event):
         "time": datetime.datetime.now(),
         "user_id": event.source.user_id,
         "event_message_id": event.message.id,
+        "reply_to": reply_to["tag"] if reply_to else None,
+        "reply_to_id": str(reply_to["_id"]) if reply_to else None,
     }
     GPT3_chat_log_col.insert_one(data)
 
@@ -192,6 +215,8 @@ def thread_GPT3(
     text_source,
     now,
     responses_log,
+    bots,
+    reply_to,
 ):
     response_text = ""
     while response_text == "":
@@ -234,6 +259,8 @@ def thread_GPT3(
             "time": datetime.datetime.now(),
             "input_type": "text",
             "condition": user["status"],
+            "reply_to": reply_to["tag"] if reply_to else None,
+            "reply_to_id": str(reply_to["_id"]) if reply_to else None,
         }
     )
     responses_log.append(
@@ -247,10 +274,46 @@ def thread_GPT3(
             "bot_name": bot["name"],
         }
     )
-
+    buttons = []
+    for b in bots:
+        buttons.append(
+            QuickReplyButton(
+                action=MessageAction(label=f"＠{b['name']}", text=f"＠{b['name']}")
+            ),
+        )
     message.append(
         TextSendMessage(
             text=response_text,
             sender=Sender(name=bot["name"].replace("_", " "), icon_url=bot["img_url"]),
+            quick_reply=QuickReply(items=buttons),
         )
     )
+
+
+def process_tag(user, event):
+    import datetime
+
+    TAG_col.find_one_and_update(
+        {
+            "user": {
+                "user_id": event.source.user_id,
+                "sn": user["sn"],
+                "status": user["status"],
+            },
+            "expired": False,
+        },
+        {"$set": {"expired": True}},
+    )
+    TAG_col.insert_one(
+        {
+            "tag": event.message.text.replace("＠", ""),
+            "user": {
+                "user_id": event.source.user_id,
+                "sn": user["sn"],
+                "status": user["status"],
+            },
+            "time": datetime.datetime.now(),
+            "expired": False,
+        }
+    )
+    return True

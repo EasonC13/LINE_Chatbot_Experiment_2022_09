@@ -23,6 +23,7 @@ Posttest_Questionnaire_Col = MongoClient[DB_NAME]["Posttest_Questionnaire"]
 SUS_Col = MongoClient[DB_NAME]["SUS"]
 TAM_Col = MongoClient[DB_NAME]["TAM"]
 Final_Survey_Col = MongoClient[DB_NAME]["Final_Survey"]
+TAG_col = MongoClient[DB_NAME]["GPT3_Chat_Tag"]
 
 
 def get_database():

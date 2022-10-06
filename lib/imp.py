@@ -1,7 +1,4 @@
-
-from linebot.exceptions import (
-    InvalidSignatureError
-)
+from linebot.exceptions import InvalidSignatureError
 from linebot.models import (
     MessageEvent,
     TextMessage,
@@ -14,5 +11,9 @@ from linebot.models import (
     PostbackTemplateAction,
     AudioMessage,
     AudioSendMessage,
-    Sender
+    Sender,
+    QuickReply,
+    QuickReplyButton,
+    PostbackAction,
+    MessageAction
 )
