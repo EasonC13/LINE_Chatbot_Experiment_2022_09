@@ -77,7 +77,10 @@ async def get_chat_history(
     )
     res = list(res)
     for r in res:
-        del r["user"]["_id"]
+        try:
+            del r["user"]["_id"]
+        except:
+            pass
     return {"chats": res}
 
 

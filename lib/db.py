@@ -20,6 +20,9 @@ Big5_Col = MongoClient[DB_NAME]["Users_Big5"]
 AttachmentStyle_Col = MongoClient[DB_NAME]["Users_AttachmentStyle"]
 Bots_Rating_Col = MongoClient[DB_NAME]["Bots_Rating"]
 Posttest_Questionnaire_Col = MongoClient[DB_NAME]["Posttest_Questionnaire"]
+SUS_Col = MongoClient[DB_NAME]["SUS"]
+TAM_Col = MongoClient[DB_NAME]["TAM"]
+Final_Survey_Col = MongoClient[DB_NAME]["Final_Survey"]
 
 
 def get_database():
