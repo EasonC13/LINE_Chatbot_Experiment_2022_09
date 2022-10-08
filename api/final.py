@@ -16,7 +16,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 import secrets
 
-from lib.db import GPT3_chat_user_col, SUS_Col, TAM_Col, Final_Survey_Col
+from lib.db import GPT3_chat_user_col, SUS_Col, TAM_Col, Final_Survey_Col, EXP_SUS_Col
 
 from datetime import datetime
 
@@ -27,14 +27,39 @@ import json
 class susBody(BaseModel):
     userId: str
     sus: str
-    comment: str
+    feeling: str
+    vision: str
 
 
 @router.post("/sus")
 async def sus(data: susBody):
     sus = json.loads(data.sus)
     res = SUS_Col.insert_one(
-        {"user_id": data.userId, "sus": sus, "comment": data.comment}
+        {
+            "user_id": data.userId,
+            "sus": sus,
+            "feeling": data.feeling,
+            "vision": data.vision,
+        }
+    )
+    return {"acknowledged": res.acknowledged}
+
+
+class exp_susBody(BaseModel):
+    userId: str
+    sus: str
+    suggestion: str
+
+
+@router.post("/exp_sus")
+async def sus(data: exp_susBody):
+    sus = json.loads(data.sus)
+    res = EXP_SUS_Col.insert_one(
+        {
+            "user_id": data.userId,
+            "sus": sus,
+            "suggestion": data.suggestion,
+        }
     )
     return {"acknowledged": res.acknowledged}
 

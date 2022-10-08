@@ -95,7 +95,7 @@ def generate_GPT3_response(event, text, bot, condition):
         top_p=1.0,
         frequency_penalty=0.5,
         presence_penalty=0.5,
-        stop=["You:", "\n"],
+        stop=["You:", "\n", user["display_name"]],
     )
 
     response_text = response.choices[0].text.replace("\n", "")
@@ -262,7 +262,9 @@ def thread_GPT3(
             "bot_name": bot["name"],
         }
     )
-    buttons = []
+    buttons = [
+        QuickReplyButton(action=MessageAction(label=f"換個話題", text=f"換個話題")),
+    ]
     for b in bots:
         buttons.append(
             QuickReplyButton(

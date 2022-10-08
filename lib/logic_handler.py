@@ -637,6 +637,7 @@ def process_command(event, text):
                     event.reply_token,
                     [
                         TextSendMessage(text="請開始十輪的聊天"),
+                        TextSendMessage(text="此為純文字聊天，不建議使用貼圖與表情符號"),
                     ],
                 )
                 return True
@@ -683,8 +684,11 @@ def process_command(event, text):
             )
     elif "Condition_" in user["status"] and "_Posttest" in user["status"]:
         if text == "我已完成後測":
-            # Checking
-            if True:
+            res = requests.get(
+                f"https://exp1.eason.best/api/v1/posttest/isfinish?userId={user['user_id']}&status={user['status']}"
+            )
+            isFinish = res.json()["isFinish"]
+            if isFinish:
                 user["status"] = user["status"].replace("_Posttest", "_Finish")
                 update_user_status(user["user_id"], user["status"])
 
@@ -692,8 +696,8 @@ def process_command(event, text):
                 line_bot_api.reply_message(
                     event.reply_token,
                     [
+                        TextSendMessage(text=f"感謝您的參與，請稍微休息一下，您還有__個實驗項目要完成"),
                         finish_info,
-                        TextSendMessage(text=f"狀態已更新為 {user['status']}"),
                     ],
                 )
                 from datetime import datetime
@@ -707,7 +711,7 @@ def process_command(event, text):
                         "skip": False,
                     }
                 )
-                time.sleep(10)
+                time.sleep(60 * 3)
                 res = Resting_Notify_col.find_one(
                     {"user_id": user["user_id"], "timeStamp": now}
                 )
@@ -759,6 +763,7 @@ def process_command(event, text):
         pass
     elif text in change_topic_command_zh:
         increase_chat_sn(user_id)
+        update_user_round(user, round=user["round"] - 1)
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="""已更換話題，讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「換個話題」以繼續對話"""),

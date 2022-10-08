@@ -116,6 +116,17 @@ async def add_ueq_result(data: ueqBody, responses={401: {}, 200: {}}):
 
 
 @router.get("/isfinish")
-async def big5(userId: str):
-    # TODO
-    return {"isFinish": True}
+async def isFinish(userId: str, status: str):
+    try:
+        UEQ_CUQ = Posttest_Questionnaire_Col.find_one(
+            {"user_id": userId, "status": status}
+        )
+        Rating = Bots_Rating_Col.find_one(
+            {
+                "user_id": userId,
+                "status": status,
+            }
+        )
+        return {"isFinish": bool(UEQ_CUQ) and bool(Rating)}
+    except:
+        return {"isFinish": False}
