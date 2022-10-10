@@ -63,6 +63,15 @@ def create_prompt(username, bot_name, prompt, prev_msgs, text, num=-3):
     return prompt
 
 
+def shorten_prompt(prompt):
+    prompt = prompt.split("\n")
+    if len(prompt) > 3:
+        del prompt[1:3]
+
+    prompt = "\n".join(prompt)
+    return prompt
+
+
 def generate_GPT3_response(event, text, bot, condition):
 
     user = get_user(event.source.user_id)
@@ -78,7 +87,7 @@ def generate_GPT3_response(event, text, bot, condition):
     )
     prev_msgs = list(prev_msgs)
     prev_msgs.sort(key=lambda x: x["time"])
-    print("prev_msgs", prev_msgs)
+    # print("prev_msgs", prev_msgs)
 
     prompt = create_prompt(
         user["display_name"], bot["name"], bot["prefix"], prev_msgs, text, -3
@@ -86,19 +95,28 @@ def generate_GPT3_response(event, text, bot, condition):
 
     have_second_chance = True
     max_try = 4
+    response_text = ""
 
-    response = openai.Completion.create(
-        engine="text-davinci-001",
-        prompt=prompt,
-        temperature=0.6,
-        max_tokens=120,
-        top_p=1.0,
-        frequency_penalty=0.5,
-        presence_penalty=0.5,
-        stop=["You:", "\n", user["display_name"]],
-    )
+    for tried in range(max_try):
+        response = openai.Completion.create(
+            engine="text-davinci-001",
+            prompt=prompt,
+            temperature=0.6,
+            max_tokens=120,
+            top_p=1.0,
+            frequency_penalty=1.5,
+            presence_penalty=1.5,
+            stop=["You:", "\n", user["display_name"]],
+        )
 
-    response_text = response.choices[0].text.replace("\n", "")
+        response_text = response.choices[0].text.replace("\n", "")
+        if len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text"]:
+            break
+        else:
+            prompt = shorten_prompt(prompt)
+            print(
+                f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
+            )
 
     # prev_responses = list(map(lambda x: x["response_text_en"], prev_msgs[-3:]))
     # count = np.unique(prev_responses, return_counts=True)[1]
