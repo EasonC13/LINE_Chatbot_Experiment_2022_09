@@ -110,7 +110,9 @@ def generate_GPT3_response(event, text, bot, condition):
         )
 
         response_text = response.choices[0].text.replace("\n", "")
-        if len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text"]:
+        if (
+            len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text"]
+        ) and len(response_text) != 0:
             break
         else:
             prompt = shorten_prompt(prompt)

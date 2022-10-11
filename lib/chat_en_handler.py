@@ -89,7 +89,7 @@ def generate_GPT3_response(event, text, bot, condition):
     prompt = create_prompt(bot["prefix"], prev_msgs, text, bot, -3)
 
     have_second_chance = True
-    max_try = 3
+    max_try = 5
     for tried in range(max_try):
         response = openai.Completion.create(
             engine="text-davinci-001",
@@ -103,14 +103,25 @@ def generate_GPT3_response(event, text, bot, condition):
         )
         response_text = response.choices[0].text.replace("\n", "")
 
-        if len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text"]:
+        if (
+            len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text_en"]
+        ) and len(response_text) != 0:
             break
         else:
             prompt = shorten_prompt(prompt)
-            print(
-                f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
-            )
+            # print(
+            #     f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
+            # )
     print("\n\nAt generate_GPT3_response:\n", prompt + response_text, end="\n")
+    # print(
+    #     'response_text != prev_msgs[-1]["response_text_en"]: ',
+    #     response_text != prev_msgs[-1]["response_text_en"],
+    #     response_text,
+    #     prev_msgs[-1]["response_text_en"],
+    # )
+    if response_text == "":
+        # print(f"response_text: '{response_text}', {len(response_text) != 0}")
+        response_text = "..."
     return response_text
 
 
