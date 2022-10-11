@@ -91,7 +91,7 @@ def process_voice_file(file_path):
     return text
 
 
-from lib.chat_handler import send_GPT3_response
+from lib.chat_zh_handler import send_GPT3_response
 import subprocess
 
 

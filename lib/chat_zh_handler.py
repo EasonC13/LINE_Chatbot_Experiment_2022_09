@@ -8,7 +8,7 @@ from lib.db import (
     TAG_col,
 )
 import os
-from lib.common import line_bot_api, handler, doThreading
+from lib.common import line_bot_api, handler, doThreading, process_tag
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -194,6 +194,12 @@ def send_GPT3_response(text, event):
     # print(message)
 
     line_bot_api.reply_message(event.reply_token, message)
+    res = GPT3_chat_log_col.find(
+        {"user_id": "Ub830fb81ec2de64d825b4ab2f6b7472e"},
+        {"event_message_id": 1, "time": 1},
+    )
+    res.sort("_id", direction=-1)
+    prev_event_message_id = list(res)[0]
     data = {
         "user": user,
         "condition": user["status"],
@@ -203,6 +209,7 @@ def send_GPT3_response(text, event):
         "time": datetime.datetime.now(),
         "user_id": event.source.user_id,
         "event_message_id": event.message.id,
+        "prev_event_message_id": prev_event_message_id,
         "reply_to": reply_to["tag"] if reply_to else None,
         "reply_to_id": str(reply_to["_id"]) if reply_to else None,
     }
@@ -224,22 +231,9 @@ def thread_GPT3(
     reply_to,
 ):
     response_text = ""
-    while response_text == "":
-        response_text = generate_GPT3_response(event, text, bot, user["status"])
-        # response_text_en = generate_GPT3_response(event, text, bot, user["status"])
-        # response_text_en = norm_text(response_text_en)
-        # # print(f"response_text_en = {response_text_en}, text_source = {text_source}")
-
-        # if text_source[:2] == "zh":
-        #     response_text = translate(response_text_en, target="zh-TW")[
-        #         "translatedText"
-        #     ]
-        # elif text_source != "en":
-        #     response_text = translate(response_text_en, target=text_source)[
-        #         "translatedText"
-        #     ]
-        # else:
-        #     response_text = response_text_en
+    # while response_text == "":
+    response_text = generate_GPT3_response(event, text, bot, user["status"])
+    response_text_en = translate(response_text_en, target="en")["translatedText"]
 
     # print("----")
     # print(f"From: {bot['id']}")
@@ -252,8 +246,8 @@ def thread_GPT3(
     GPT3_chat_history_col.insert_one(
         {
             "input_text": text,
-            # "input_text_en": text_en,
-            # "response_text_en": response_text_en,
+            "input_text_en": text_en,
+            "response_text_en": response_text_en,
             "response_text": response_text,
             "event_message_id": event.message.id,
             "user": {
@@ -296,32 +290,3 @@ def thread_GPT3(
             quick_reply=QuickReply(items=buttons),
         )
     )
-
-
-def process_tag(user, event):
-    import datetime
-
-    TAG_col.find_one_and_update(
-        {
-            "user": {
-                "user_id": event.source.user_id,
-                "sn": user["sn"],
-                "status": user["status"],
-            },
-            "expired": False,
-        },
-        {"$set": {"expired": True}},
-    )
-    TAG_col.insert_one(
-        {
-            "tag": event.message.text.replace("＠", ""),
-            "user": {
-                "user_id": event.source.user_id,
-                "sn": user["sn"],
-                "status": user["status"],
-            },
-            "time": datetime.datetime.now(),
-            "expired": False,
-        }
-    )
-    return True

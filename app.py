@@ -85,9 +85,9 @@ def handleTextMessage(event):
     doThreading(process_text_message, args=(event))
 
 
-@handler.add(MessageEvent, message=AudioMessage)
-def handleAudioMessage(event):
-    doThreading(process_voice_message, args=(event))
+# @handler.add(MessageEvent, message=AudioMessage)
+# def handleAudioMessage(event):
+#     doThreading(process_voice_message, args=(event))
 
 
 from api.routes import router as api_v1_router

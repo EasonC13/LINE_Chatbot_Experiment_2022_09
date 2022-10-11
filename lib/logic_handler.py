@@ -9,11 +9,14 @@ from lib.db import (
     Total_Conditions_Count,
     Resting_Notify_col,
     TAG_col,
+    ALL_STATUS,
 )
 from lib.imp import *
 import requests
 import time
-from lib.chat_handler import send_GPT3_response, process_tag
+from lib.common import process_tag
+from lib.chat_zh_handler import send_GPT3_response as send_zh_GPT3_response
+from lib.chat_en_handler import send_GPT3_response as send_en_GPT3_response
 
 
 def process_text_message(event):
@@ -22,7 +25,7 @@ def process_text_message(event):
     if process_command(event, text):
         return True
 
-    send_GPT3_response(text, event)
+    print("QQQQQQQ")
 
 
 def update_user_status(user_id, newStatus):
@@ -48,8 +51,17 @@ user
 import random
 
 
+def get_how_many_tasks_left(user):
+    tasks = list(filter(lambda x: "Condition_" in x and "_Finish" in x, ALL_STATUS))
+    user_finished = list(
+        filter(lambda x: "Condition_" in x and "_Finish" in x, user["status_history"])
+    )
+    user_finished.append(user["status"])
+    return len(set(tasks) - set(user_finished))
+
+
 def randomly_get_next_task(user):
-    tasks = ["Condition_A_Pretest", "Condition_B_Pretest", "Condition_C_Pretest"]
+    tasks = list(filter(lambda x: "Condition_" in x and "_Pretest" in x, ALL_STATUS))
     random.shuffle(tasks)
     tasks.append(False)
     for t in tasks:
@@ -693,10 +705,13 @@ def process_command(event, text):
                 update_user_status(user["user_id"], user["status"])
 
                 finish_info = get_finish_info(user)
+                tasks_left_num = get_how_many_tasks_left(user)
                 line_bot_api.reply_message(
                     event.reply_token,
                     [
-                        TextSendMessage(text=f"感謝您的參與，請稍微休息一下，您還有__個實驗項目要完成"),
+                        TextSendMessage(
+                            text=f"感謝您的參與，請稍微休息一下，您還有 {tasks_left_num} 個實驗項目要完成"
+                        ),
                         finish_info,
                     ],
                 )
@@ -783,15 +798,12 @@ def process_command(event, text):
             return True
         user["round"] += 1
         update_user_round(user, round=user["round"])
-        from lib.chat_handler import send_GPT3_response
+        if "Z_Chatting" in user["status"]:
 
-        send_GPT3_response(text, event)
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     [
-        #         TextSendMessage(text="收，但引擎還沒串"),
-        #     ],
-        # )
+            send_zh_GPT3_response(text, event)
+        else:
+            send_en_GPT3_response(text, event)
+
         if user["round"] > 10:
             user["status"] = user["status"].replace("_Chatting", "_Posttest")
             post_test_info = get_post_test_info(user)
