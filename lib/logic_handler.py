@@ -661,6 +661,7 @@ def process_command(event, text):
             [
                 pre_test_info,
                 TextSendMessage(text="請依照上方卡片指示，點選「進行前測」做好感度評估，之後點選「下一步」繼續實驗"),
+                TextSendMessage(text="偵測到您尚未完成前測"),
             ],
         )
         return True
@@ -710,7 +711,7 @@ def process_command(event, text):
                     event.reply_token,
                     [
                         TextSendMessage(
-                            text=f"感謝您的參與，請稍微休息一下，您還有 {tasks_left_num} 個實驗項目要完成"
+                            text=f"感謝您的參與，請稍微休息一下，您還有 {tasks_left_num + 1} 個實驗項目要完成"
                         ),
                         finish_info,
                     ],

@@ -190,11 +190,15 @@ def send_GPT3_response(text, event):
 
     line_bot_api.reply_message(event.reply_token, message)
     res = GPT3_chat_log_col.find(
-        {"user_id": "Ub830fb81ec2de64d825b4ab2f6b7472e"},
+        {"user_id": event.source.user_id},
         {"event_message_id": 1, "time": 1},
     )
     res.sort("_id", direction=-1)
-    prev_event_message_id = list(res)[0]
+    res = list(res)
+    if res:
+        prev_event_message_id = res[0]["event_message_id"]
+    else:
+        prev_event_message_id = 0
     data = {
         "user": user,
         "condition": user["status"],

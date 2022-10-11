@@ -201,7 +201,7 @@ def send_GPT3_response(text, event):
         {"event_message_id": 1, "time": 1},
     )
     res.sort("_id", direction=-1)
-    prev_event_message_id = list(res)[0]
+    prev_event_message_id = list(res)[0]["event_message_id"]
     data = {
         "user": user,
         "condition": user["status"],
