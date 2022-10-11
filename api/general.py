@@ -16,9 +16,10 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 import secrets
 
-from lib.db import GPT3_chat_user_col
+from lib.db import GPT3_chat_user_col, GPT3_chat_bots_col
 
 from datetime import datetime
+import random
 
 
 @router.get("/isfinish")
@@ -26,3 +27,11 @@ async def big5(userId: str, condition: str):
     user = GPT3_chat_user_col.find_one({"user_id": userId})
     print(user)
     return {"isfinish": condition in user["status_history"]}
+
+
+@router.get("/bots")
+async def bots(condition: str, shuffle: bool = True):
+    condition = condition.split("_")[-1]
+    bots = list(GPT3_chat_bots_col.find({"condition": condition}, {"_id": False}))
+    random.shuffle(bots)
+    return bots

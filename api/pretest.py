@@ -24,13 +24,6 @@ from datetime import datetime
 import json
 
 
-@router.get("/bots")
-async def bots(condition: str):
-    condition = condition.split("_")[-1]
-    bots = list(GPT3_chat_bots_col.find({"condition": condition}, {"_id": False}))
-    return bots
-
-
 class ratingBody(BaseModel):
     userId: str
     ratings: str
