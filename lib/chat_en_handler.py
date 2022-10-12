@@ -294,7 +294,7 @@ def thread_GPT3(
         }
     )
     buttons = [
-        QuickReplyButton(action=MessageAction(label=f"換個話題", text=f"換個話題")),
+        QuickReplyButton(action=MessageAction(label=f"刷新", text=f"刷新")),
     ]
     for b in bots:
         buttons.append(

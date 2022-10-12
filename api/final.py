@@ -123,3 +123,26 @@ async def isFinish(userId: str):
         return {"isFinish": bool(Final_Survey and TAM and EXP_SUS and SUS)}
     except:
         return {"isFinish": False}
+
+
+class followupBody(BaseModel):
+    userId: str
+    checked: bool
+    questions: str
+
+
+@router.post("/followup")
+async def followup(data: followupBody):
+
+    res = GPT3_chat_user_col.update_one(
+        {
+            "user_id": data.userId,
+        },
+        {
+            "$set": {
+                "want_follow_up": data.checked,
+                "follow_up_questions": data.questions,
+            }
+        },
+    )
+    return {"acknowledged": res.acknowledged}

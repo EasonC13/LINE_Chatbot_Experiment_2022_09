@@ -35,6 +35,7 @@ class ratingBody(BaseModel):
     ratings: str
     condition: str
     status: str
+    cost_time: str
 
 
 @router.post("/ratings", responses={401: {}, 200: {}})
@@ -42,10 +43,12 @@ async def ratings(data: ratingBody):
     user = GPT3_chat_user_col.find_one({"user_id": data.userId})
     if user:
         ratings = json.loads(data.ratings)
+        cost_time = json.loads(data.cost_time)
         res = Bots_Rating_Col.insert_one(
             {
                 "user_id": data.userId,
                 "ratings": ratings,
+                "cost_time": cost_time,
                 "condition": data.condition,
                 "status": data.status,
                 "add_time": datetime.now(),
@@ -82,6 +85,7 @@ class ueqBody(BaseModel):
     userId: str
     condition: str
     status: str
+    cost_time: str
 
 
 @router.post("/questionnaire")
@@ -89,6 +93,7 @@ async def add_ueq_result(data: ueqBody, responses={401: {}, 200: {}}):
     user = GPT3_chat_user_col.find_one({"user_id": data.userId})
     if user:
         all_rating = json.loads(data.all_rating)
+        cost_time = json.loads(data.cost_time)
         all_rating_list = []
         for key, value in all_rating.items():
             all_rating_list.append(value)
@@ -100,6 +105,7 @@ async def add_ueq_result(data: ueqBody, responses={401: {}, 200: {}}):
                 "status": data.status,
                 "all_rating": all_rating,
                 "all_rating_list": all_rating_list,
+                "cost_time": cost_time,
             }
         )
         done = res.acknowledged

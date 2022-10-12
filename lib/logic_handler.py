@@ -515,7 +515,7 @@ def get_final_flexmsg(user):
 
 
 change_topic_command_zh = [
-    "換個話題",
+    "刷新",
 ]
 change_topic_command_en = ["change topic"]
 
@@ -712,7 +712,7 @@ def process_command(event, text):
                     event.reply_token,
                     [
                         TextSendMessage(
-                            text=f"感謝您的參與，請稍微休息一下，您還有 {tasks_left_num + 1} 個實驗項目要完成"
+                            text=f"感謝您的參與，請稍微休息一下，您還有 {tasks_left_num } 輪聊天實驗要完成"
                         ),
                         finish_info,
                     ],
@@ -790,7 +790,7 @@ def process_command(event, text):
         update_user_round(user, round=user["round"] - 1)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="""已更換話題，讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「換個話題」以繼續對話"""),
+            TextSendMessage(text="""讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「刷新」以繼續對話"""),
         )
         return True
     # elif text.lower() in change_topic_command_en:

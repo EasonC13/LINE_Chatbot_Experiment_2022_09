@@ -46,7 +46,7 @@ import asyncio
 import subprocess
 
 
-app = FastAPI(title="Chatbot Experience", version=1, prefix="/api")
+app = FastAPI(title="Chatbot Experience", version=1, docs_url=None, redoc_url=None)
 
 app.add_middleware(
     CORSMiddleware,

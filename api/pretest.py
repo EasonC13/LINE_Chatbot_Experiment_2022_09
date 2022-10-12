@@ -29,6 +29,7 @@ class ratingBody(BaseModel):
     ratings: str
     condition: str
     status: str
+    cost_time: str
 
 
 @router.post("/ratings", responses={401: {}, 200: {}})
@@ -36,10 +37,12 @@ async def ratings(data: ratingBody):
     user = GPT3_chat_user_col.find_one({"user_id": data.userId})
     if user:
         ratings = json.loads(data.ratings)
+        cost_time = json.loads(data.cost_time)
         res = Bots_Rating_Col.insert_one(
             {
                 "user_id": data.userId,
                 "ratings": ratings,
+                "cost_time": cost_time,
                 "condition": data.condition,
                 "status": data.status,
                 "add_time": datetime.now(),
