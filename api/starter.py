@@ -80,7 +80,7 @@ async def big5(data: attachmentBody):
 
 
 @router.get("/isfinish")
-async def big5(userId: str):
+async def isFinish(userId: str):
     try:
         AttachmentStyle = AttachmentStyle_Col.find_one({"user_id": userId})
         Big5 = Big5_Col.find_one({"user_id": userId})

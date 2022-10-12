@@ -5,6 +5,7 @@ from lib.db import (
     GPT3_chat_history_col,
     GPT3_chat_log_col,
     TAG_col,
+    ERROR_col,
     get_user,
 )
 import os
@@ -35,6 +36,10 @@ from linebot.models import (
     QuickReplyButton,
     MessageAction,
 )
+
+from telegram_notifier import send_message
+
+
 import subprocess
 
 from google.cloud import speech
@@ -187,8 +192,14 @@ def send_GPT3_response(text, event):
         # thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_source)
     for t in tasks:
         t.join()
+    if len(message) == 0:
+        send_message(f"[聊天機器人實驗]\n出現回應訊息數為零的錯誤在受試者 ID: {event.source.user_id}")
+        ERROR_col.insert_one({"user": user, "time": datetime.datetime.now()})
+    try:
+        line_bot_api.reply_message(event.reply_token, message)
+    except Exception as e:
+        line_bot_api.push_message(event.source.user_id, message)
 
-    line_bot_api.reply_message(event.reply_token, message)
     res = GPT3_chat_log_col.find(
         {"user_id": event.source.user_id},
         {"event_message_id": 1, "time": 1},

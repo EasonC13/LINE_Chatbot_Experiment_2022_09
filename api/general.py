@@ -25,7 +25,6 @@ import random
 @router.get("/isfinish")
 async def big5(userId: str, condition: str):
     user = GPT3_chat_user_col.find_one({"user_id": userId})
-    print(user)
     return {"isfinish": condition in user["status_history"]}
 
 

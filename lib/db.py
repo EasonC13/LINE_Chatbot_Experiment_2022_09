@@ -26,6 +26,7 @@ TAM_Col = MongoClient[DB_NAME]["TAM"]
 Final_Survey_Col = MongoClient[DB_NAME]["Final_Survey"]
 TAG_col = MongoClient[DB_NAME]["GPT3_Chat_Tag"]
 Behavior_col = MongoClient[DB_NAME]["Behavior"]
+ERROR_col = MongoClient[DB_NAME]["Errors"]
 
 
 def get_database():
@@ -36,7 +37,7 @@ from lib.common import line_bot_api, handler, doThreading
 
 Total_Conditions_Count = 3
 ALL_STATUS = [
-    "New Starter",
+    "New_Starter",
     "Condition_A_Pretest",
     "Condition_A_Chatting",
     "Condition_A_Posttest",

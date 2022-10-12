@@ -27,24 +27,46 @@ from datetime import datetime
 import json
 
 
-class newBehaviorRecordBody(BaseModel):
+class changeTopicBody(BaseModel):
     userId: str
-    behavior: str
 
 
-@router.post("/newBehaviorRecord", responses={401: {}, 200: {}})
-async def newBehaviorRecord(data: newBehaviorRecordBody):
+@router.post("/changeTopic", responses={401: {}, 200: {}})
+async def changeTopic(data: changeTopicBody):
     user = GPT3_chat_user_col.find_one({"user_id": data.userId})
     if user:
         res = Behavior_col.insert_one(
             {
                 "user_id": data.userId,
-                "username": user["display_name"],
                 "round": user["round"],
                 "condition": user["status"],
-                "behavior": data.behavior,
-                "status_history_length": len(user["status_history"]),
-                "timestamp": datetime.now(),
+                "behavior": "changeTopic",
+                "add_time": datetime.now(),
+            }
+        )
+        done = res.acknowledged
+    else:
+        done = False
+
+    return {"acknowledged": done}
+
+
+class openChatHistoryBody(BaseModel):
+    userId: str
+    botId: str
+
+
+@router.post("/openChatHistory", responses={401: {}, 200: {}})
+async def changeTopic(data: openChatHistoryBody):
+    user = GPT3_chat_user_col.find_one({"user_id": data.userId})
+    if user:
+        res = Behavior_col.insert_one(
+            {
+                "user_id": data.userId,
+                "bot_id": data.botId,
+                "condition": user["status"],
+                "behavior": "openChatHistory",
+                "add_time": datetime.now(),
             }
         )
         done = res.acknowledged

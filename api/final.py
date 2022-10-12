@@ -111,3 +111,15 @@ async def final_survey(data: finalBody):
     # bank_id: this.bank_id,
     # bank_account: this.bank_account,
     # feedback: this.feedback,
+
+
+@router.get("/isfinish")
+async def isFinish(userId: str):
+    try:
+        Final_Survey = Final_Survey_Col.find_one({"user_id": userId})
+        TAM = TAM_Col.find_one({"user_id": userId})
+        EXP_SUS = EXP_SUS_Col.find_one({"user_id": userId})
+        SUS = SUS_Col.find_one({"user_id": userId})
+        return {"isFinish": bool(Final_Survey and TAM and EXP_SUS and SUS)}
+    except:
+        return {"isFinish": False}

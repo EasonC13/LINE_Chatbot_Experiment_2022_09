@@ -488,7 +488,7 @@ def get_final_flexmsg(user):
                         "action": {
                             "type": "uri",
                             "label": "進行最終問卷",
-                            "uri": f"https://exp1.eason.best/final?id={user['user_id']}",
+                            "uri": f"https://exp1.eason.best/final?id={user['user_id']}&test=Final_Test",
                         },
                     },
                     {
@@ -584,7 +584,7 @@ def process_command(event, text):
                                                 "contents": [
                                                     {
                                                         "type": "text",
-                                                        "text": "點選下方「閱讀指引」觀看實驗說明並勾選同意，之後點選「下一步」開始實驗",
+                                                        "text": "點選下方「閱讀指引」觀看實驗說明並勾選同意，並且填寫資料，之後點選「下一步」開始實驗",
                                                         "wrap": True,
                                                         "color": "#666666",
                                                         "size": "sm",
@@ -608,7 +608,7 @@ def process_command(event, text):
                                         "action": {
                                             "type": "uri",
                                             "label": "進行初始階段",
-                                            "uri": f"https://exp1.eason.best/starter?id={user_id}",
+                                            "uri": f"https://exp1.eason.best/starter?id={user_id}&test=New_Starter",
                                         },
                                     },
                                     {
@@ -758,8 +758,11 @@ def process_command(event, text):
             ],
         )
     elif "Final_Test" == user["status"]:
-        # Checking
-        if True:
+        res = requests.get(
+            f"https://exp1.eason.best/api/v1/final/isfinish?userId={user['user_id']}&status={user['status']}"
+        )
+        isFinish = res.json()["isFinish"]
+        if isFinish:
             update_user_status(user["user_id"], "Finish")
             line_bot_api.reply_message(
                 event.reply_token,
@@ -780,8 +783,8 @@ def process_command(event, text):
         pass
     elif text in change_topic_command_zh:
         requests.post(
-            "https://exp1.eason.best/api/v1/behavior/newBehaviorRecord",
-            data=json.dumps({"userId": user_id, "behavior": "changeTopic"}),
+            "https://exp1.eason.best/api/v1/behavior/changeTopic",
+            data=json.dumps({"userId": user_id}),
         )
         increase_chat_sn(user_id)
         update_user_round(user, round=user["round"] - 1)
