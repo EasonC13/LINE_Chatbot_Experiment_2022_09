@@ -117,7 +117,7 @@ def generate_GPT3_response(event, text, bot, condition):
             # print(
             #     f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
             # )
-    print("\n\nAt generate_GPT3_response:\n", prompt + response_text, end="\n")
+    # print("\n\nAt generate_GPT3_response:\n", prompt + response_text, end="\n")
     # print(
     #     'response_text != prev_msgs[-1]["response_text_en"]: ',
     #     response_text != prev_msgs[-1]["response_text_en"],
@@ -243,16 +243,16 @@ def thread_GPT3(
     response_text_en = generate_GPT3_response(event, text_en, bot, user["status"])
     response_text_en = norm_text(response_text_en)
     # print(f"response_text_en = {response_text_en}, text_source = {text_source}")
-
-    if text_source[:2] == "zh":
-        response_text = translate(response_text_en, target="zh-TW")["translatedText"]
-    elif text_source != "en":
-        response_text = translate(response_text_en, target=text_source)[
-            "translatedText"
-        ]
-    else:
-        response_text = translate(response_text_en, target="zh-TW")["translatedText"]
-        # response_text = response_text_en
+    response_text = translate(response_text_en, target="zh-TW")["translatedText"]
+    # if text_source[:2] == "zh":
+    #     response_text = translate(response_text_en, target="zh-TW")["translatedText"]
+    # elif text_source != "en":
+    #     response_text = translate(response_text_en, target=text_source)[
+    #         "translatedText"
+    #     ]
+    # else:
+    #     response_text = translate(response_text_en, target="zh-TW")["translatedText"]
+    #     # response_text = response_text_en
 
     # print("----")
     # print(f"From: {bot['id']}")

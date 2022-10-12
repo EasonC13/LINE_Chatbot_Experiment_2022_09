@@ -54,6 +54,7 @@ async def changeTopic(data: changeTopicBody):
 class openChatHistoryBody(BaseModel):
     userId: str
     botId: str
+    duration: float
 
 
 @router.post("/openChatHistory", responses={401: {}, 200: {}})
@@ -66,6 +67,7 @@ async def changeTopic(data: openChatHistoryBody):
                 "bot_id": data.botId,
                 "condition": user["status"],
                 "behavior": "openChatHistory",
+                "duration": data.duration,
                 "add_time": datetime.now(),
             }
         )

@@ -528,7 +528,7 @@ def process_command(event, text):
     user_id = event.source.user_id
     user = get_user(user_id)
 
-    if user["status"] == "New Starter":
+    if user["status"] == "New_Starter":
         if text == "我已完成初始階段":
             res = requests.get(
                 f"https://exp1.eason.best/api/v1/starter/isfinish?userId={user['user_id']}"
@@ -584,7 +584,7 @@ def process_command(event, text):
                                                 "contents": [
                                                     {
                                                         "type": "text",
-                                                        "text": "點選下方「閱讀指引」觀看實驗說明並勾選同意，並且填寫資料，之後點選「下一步」開始實驗",
+                                                        "text": "點選下方「進行初始階段」觀看實驗說明並勾選同意，並且填寫資料，之後點選「下一步」繼續實驗",
                                                         "wrap": True,
                                                         "color": "#666666",
                                                         "size": "sm",
@@ -650,7 +650,7 @@ def process_command(event, text):
                     event.reply_token,
                     [
                         TextSendMessage(text="請開始十輪的聊天"),
-                        TextSendMessage(text="此為純文字聊天，不建議使用貼圖與表情符號"),
+                        # TextSendMessage(text="此為純文字聊天，不建議使用貼圖與表情符號"),
                     ],
                 )
                 return True
@@ -745,7 +745,7 @@ def process_command(event, text):
             event.reply_token,
             [
                 post_test_info,
-                TextSendMessage(text="請依照上方卡片指示，點選「進行後測」做好感度評估，之後點選「下一步」繼續實驗"),
+                TextSendMessage(text="請依照上方卡片指示，點選「進行後測」，之後點選「下一步」繼續實驗"),
             ],
         )
         return True
@@ -813,7 +813,7 @@ def process_command(event, text):
         else:
             send_en_GPT3_response(text, event)
 
-        if user["round"] > 10:
+        if user["round"] == 10:
             user["status"] = user["status"].replace("_Chatting", "_Posttest")
             post_test_info = get_post_test_info(user)
             line_bot_api.push_message(user["user_id"], post_test_info)
