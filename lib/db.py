@@ -25,6 +25,7 @@ EXP_SUS_Col = MongoClient[DB_NAME]["EXP_SUS"]
 TAM_Col = MongoClient[DB_NAME]["TAM"]
 Final_Survey_Col = MongoClient[DB_NAME]["Final_Survey"]
 TAG_col = MongoClient[DB_NAME]["GPT3_Chat_Tag"]
+Behavior_col = MongoClient[DB_NAME]["Behavior"]
 
 
 def get_database():

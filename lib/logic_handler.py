@@ -14,6 +14,7 @@ from lib.db import (
 from lib.imp import *
 import requests
 import time
+import json
 from lib.common import process_tag
 from lib.chat_zh_handler import send_GPT3_response as send_zh_GPT3_response
 from lib.chat_en_handler import send_GPT3_response as send_en_GPT3_response
@@ -778,6 +779,10 @@ def process_command(event, text):
             )
         pass
     elif text in change_topic_command_zh:
+        requests.post(
+            "https://exp1.eason.best/api/v1/behavior/newBehaviorRecord",
+            data=json.dumps({"userId": user_id, "behavior": "changeTopic"}),
+        )
         increase_chat_sn(user_id)
         update_user_round(user, round=user["round"] - 1)
         line_bot_api.reply_message(
@@ -785,15 +790,15 @@ def process_command(event, text):
             TextSendMessage(text="""已更換話題，讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「換個話題」以繼續對話"""),
         )
         return True
-    elif text.lower() in change_topic_command_en:
-        increase_chat_sn(user_id)
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(
-                text="""Topic changed, let's continue chatting.\nIf I keep saying weird things again, please enter 'change topic'."""
-            ),
-        )
-        return True
+    # elif text.lower() in change_topic_command_en:
+    #     increase_chat_sn(user_id)
+    #     line_bot_api.reply_message(
+    #         event.reply_token,
+    #         TextSendMessage(
+    #             text="""Topic changed, let's continue chatting.\nIf I keep saying weird things again, please enter 'change topic'."""
+    #         ),
+    #     )
+    #     return True
     elif "Condition_" in user["status"] and "_Chatting" in user["status"]:
         if "＠" == text[0] and process_tag(user, event):
             return True
