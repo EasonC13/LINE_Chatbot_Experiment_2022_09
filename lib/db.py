@@ -54,6 +54,10 @@ ALL_STATUS = [
     "Condition_D_Chatting",
     "Condition_D_Posttest",
     "Condition_D_Finish",
+    "Condition_E_Pretest",
+    "Condition_E_Chatting",
+    "Condition_E_Posttest",
+    "Condition_E_Finish",
     "Final_Test",
     "Finish",
 ]
