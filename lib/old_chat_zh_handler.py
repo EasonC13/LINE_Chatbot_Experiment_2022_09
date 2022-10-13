@@ -4,9 +4,8 @@ from lib.db import (
     GPT3_chat_bots_col,
     GPT3_chat_history_col,
     GPT3_chat_log_col,
-    TAG_col,
-    ERROR_col,
     get_user,
+    TAG_col,
 )
 import os
 from lib.common import line_bot_api, handler, doThreading, process_tag
@@ -36,10 +35,6 @@ from linebot.models import (
     QuickReplyButton,
     MessageAction,
 )
-
-from telegram_notifier import send_message
-
-
 import subprocess
 
 from google.cloud import speech
@@ -55,15 +50,16 @@ import numpy as np
 import io
 
 from bson.objectid import ObjectId
-from lib.db import GPT3_chat_bots_col
 
 
-def create_prompt(prompt, prev_msgs, text, bot, num=-3):
-    prompt = prompt.replace("{bot_name}", bot["name"])
+def create_prompt(username, bot_name, prompt, prev_msgs, text, num=-3):
     prompt = (prompt + "\n") if prompt[-1] != "\n" else prompt
+    prompt = prompt.replace("{username}", username).replace("{bot_name}", bot_name)
     for msg in prev_msgs[num:]:
-        prompt += f"You: {msg['input_text']}\nFriend: {msg['response_text']}\n"
-    prompt += f"You: {text}\nFriend: "
+        prompt += (
+            f"{username}: {msg['input_text']}\n{bot_name}: {msg['response_text']}\n"
+        )
+    prompt += f"{username}: {text}\{bot_name}: "
     return prompt
 
 
@@ -79,6 +75,7 @@ def shorten_prompt(prompt):
 def generate_GPT3_response(event, text, bot, condition):
 
     user = get_user(event.source.user_id)
+    print("text", text)
 
     prev_msgs = GPT3_chat_history_col.find(
         {
@@ -90,11 +87,16 @@ def generate_GPT3_response(event, text, bot, condition):
     )
     prev_msgs = list(prev_msgs)
     prev_msgs.sort(key=lambda x: x["time"])
+    # print("prev_msgs", prev_msgs)
 
-    prompt = create_prompt(bot["prefix"], prev_msgs, text, bot, -3)
+    prompt = create_prompt(
+        user["display_name"], bot["name"], bot["prefix"], prev_msgs, text, -3
+    )
 
     have_second_chance = True
-    max_try = 5
+    max_try = 4
+    response_text = ""
+
     for tried in range(max_try):
         response = openai.Completion.create(
             engine="text-davinci-001",
@@ -102,32 +104,27 @@ def generate_GPT3_response(event, text, bot, condition):
             temperature=0.6,
             max_tokens=120,
             top_p=1.0,
-            frequency_penalty=0.5,
-            presence_penalty=0.5,
-            stop=["你: ", "You: "],
+            frequency_penalty=1.5,
+            presence_penalty=1.5,
+            stop=["You:", "\n", user["display_name"]],
         )
-        response_text = response.choices[0].text.replace("\n", "")
 
+        response_text = response.choices[0].text.replace("\n", "")
         if (
-            len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text_en"]
+            len(prev_msgs) == 0 or response_text != prev_msgs[-1]["response_text"]
         ) and len(response_text) != 0:
             break
         else:
             prompt = shorten_prompt(prompt)
-            # print(
-            #     f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
-            # )
-    # print("\n\nAt generate_GPT3_response:\n", prompt + response_text, end="\n")
-    # print(
-    #     'response_text != prev_msgs[-1]["response_text_en"]: ',
-    #     response_text != prev_msgs[-1]["response_text_en"],
-    #     response_text,
-    #     prev_msgs[-1]["response_text_en"],
-    # )
-    # print(prompt + response_text)
-    if response_text == "":
-        # print(f"response_text: '{response_text}', {len(response_text) != 0}")
-        response_text = "..."
+            print(
+                f"\n\nshorten_prompt for {bot['id']} with reply {response_text} on tried {tried}\n\n"
+            )
+
+    # prev_responses = list(map(lambda x: x["response_text_en"], prev_msgs[-3:]))
+    # count = np.unique(prev_responses, return_counts=True)[1]
+
+    print(prompt + response_text, end="\n")
+
     return response_text
 
 
@@ -155,6 +152,7 @@ def send_GPT3_response(text, event):
 
     condition = user["status"].split("_")[1]
     bots = list(GPT3_chat_bots_col.find({"condition": condition}))
+
     reply_to = TAG_col.find_one_and_update(
         {
             "user": {
@@ -171,6 +169,7 @@ def send_GPT3_response(text, event):
     tasks = []
     now = datetime.datetime.now()
     responses_log = []
+
     for bot in bots:
         t = doThreading(
             thread_GPT3,
@@ -193,24 +192,16 @@ def send_GPT3_response(text, event):
         # thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_source)
     for t in tasks:
         t.join()
-    if len(message) == 0:
-        send_message(f"[聊天機器人實驗]\n出現回應訊息數為零的錯誤在受試者 ID: {event.source.user_id}")
-        ERROR_col.insert_one({"user": user, "time": datetime.datetime.now()})
-    try:
-        line_bot_api.reply_message(event.reply_token, message)
-    except Exception as e:
-        line_bot_api.push_message(event.source.user_id, message)
 
+    # print(message)
+
+    line_bot_api.reply_message(event.reply_token, message)
     res = GPT3_chat_log_col.find(
-        {"user_id": event.source.user_id},
+        {"user_id": "Ub830fb81ec2de64d825b4ab2f6b7472e"},
         {"event_message_id": 1, "time": 1},
     )
     res.sort("_id", direction=-1)
-    res = list(res)
-    if res:
-        prev_event_message_id = res[0]["event_message_id"]
-    else:
-        prev_event_message_id = 0
+    prev_event_message_id = list(res)[0]["event_message_id"]
     data = {
         "user": user,
         "condition": user["status"],
@@ -241,10 +232,18 @@ def thread_GPT3(
     bots,
     reply_to,
 ):
+    response_text = ""
+    # while response_text == "":
     response_text = generate_GPT3_response(event, text, bot, user["status"])
-    # print(f"response_text_en = {response_text_en}, text_source = {text_source}")
-    response_text_en = translate(response_text, target="en")["translatedText"]
-    response_text_en = norm_text(response_text_en)
+    response_text_en = translate(response_text_en, target="en")["translatedText"]
+
+    # print("----")
+    # print(f"From: {bot['id']}")
+    # print("--Origin--")
+    # print(f"{text_en} => {response_text_en}")
+    # print("--Translated--")
+    # print(f"{text} => {response_text}")
+    # print("========")
 
     GPT3_chat_history_col.insert_one(
         {
@@ -269,13 +268,12 @@ def thread_GPT3(
     responses_log.append(
         {
             "input_text": text,
-            "input_text_en": text_en,
-            "response_text_en": response_text_en,
+            # "input_text_en": text_en,
+            # "response_text_en": response_text_en,
             "response_text": response_text,
             "bot_id": bot["id"],
             "bot_img": bot["img_url"],
             "bot_name": bot["name"],
-            "is_zh": "中文" in bot["description"],
         }
     )
     buttons = [

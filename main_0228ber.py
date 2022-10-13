@@ -375,7 +375,7 @@ def process_command(event, text):
             event.reply_token,
             TextSendMessage(
                 text="""讓我們繼續聊天吧～
-如果我又持續說重複的話，請輸入「刷新」以繼續對話"""
+如果聊天對象又持續說重複的話，請輸入「刷新」以繼續對話"""
             ),
         )
         return True

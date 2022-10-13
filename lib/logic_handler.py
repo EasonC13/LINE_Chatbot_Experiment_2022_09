@@ -790,7 +790,7 @@ def process_command(event, text):
         update_user_round(user, round=user["round"] - 1)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="""讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「刷新」以繼續對話"""),
+            TextSendMessage(text="""讓我們繼續聊天吧～\n如果聊天對象又持續說重複的話，請輸入「刷新」以繼續對話"""),
         )
         return True
     # elif text.lower() in change_topic_command_en:
@@ -807,18 +807,21 @@ def process_command(event, text):
             return True
         user["round"] += 1
         update_user_round(user, round=user["round"])
+
         if "Z_Chatting" in user["status"]:
 
             send_zh_GPT3_response(text, event)
         else:
             send_en_GPT3_response(text, event)
-
         if user["round"] == 10:
-            user["status"] = user["status"].replace("_Chatting", "_Posttest")
-            post_test_info = get_post_test_info(user)
-            line_bot_api.push_message(user["user_id"], post_test_info)
-            update_user_status(user["user_id"], user["status"])
-
+            start_posttest(user)
         return True
 
     return True
+
+
+def start_posttest(user):
+    user["status"] = user["status"].replace("_Chatting", "_Posttest")
+    post_test_info = get_post_test_info(user)
+    line_bot_api.push_message(user["user_id"], post_test_info)
+    update_user_status(user["user_id"], user["status"])

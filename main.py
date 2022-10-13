@@ -458,7 +458,7 @@ def process_command(event, text):
         increase_chat_sn(user_id)
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="""讓我們繼續聊天吧～\n如果我又持續說重複的話，請輸入「刷新」以繼續對話"""),
+            TextSendMessage(text="""讓我們繼續聊天吧～\n如果聊天對象又持續說重複的話，請輸入「刷新」以繼續對話"""),
         )
         return True
     elif text in change_topic_command_en:

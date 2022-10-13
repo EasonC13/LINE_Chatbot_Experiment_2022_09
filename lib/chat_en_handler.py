@@ -38,6 +38,7 @@ from linebot.models import (
 )
 
 from telegram_notifier import send_message
+from lib.chat_zh_handler import thread_GPT3 as thread_GPT3_zh
 
 
 import subprocess
@@ -124,6 +125,7 @@ def generate_GPT3_response(event, text, bot, condition):
     #     response_text,
     #     prev_msgs[-1]["response_text_en"],
     # )
+    # print(prompt + response_text)
     if response_text == "":
         # print(f"response_text: '{response_text}', {len(response_text) != 0}")
         response_text = "..."
@@ -171,23 +173,30 @@ def send_GPT3_response(text, event):
     now = datetime.datetime.now()
     responses_log = []
     for bot in bots:
-        t = doThreading(
-            thread_GPT3,
-            args=(
-                message,
-                event,
-                text,
-                text_en,
-                bot,
-                user_profile,
-                user,
-                text_source,
-                now,
-                responses_log,
-                bots,
-                reply_to,
-            ),
+        thread_GPT3_args = (
+            message,
+            event,
+            text,
+            text_en,
+            bot,
+            user_profile,
+            user,
+            text_source,
+            now,
+            responses_log,
+            bots,
+            reply_to,
         )
+        if "中文" in bot["description"]:
+            t = doThreading(
+                thread_GPT3_zh,
+                args=thread_GPT3_args,
+            )
+        else:
+            t = doThreading(
+                thread_GPT3,
+                args=thread_GPT3_args,
+            )
         tasks.append(t)
         # thread_GPT3(message, event, text, text_en, bot, user_profile, user, text_source)
     for t in tasks:
@@ -291,6 +300,7 @@ def thread_GPT3(
             "bot_id": bot["id"],
             "bot_img": bot["img_url"],
             "bot_name": bot["name"],
+            "is_zh": "中文" in bot["description"],
         }
     )
     buttons = [
