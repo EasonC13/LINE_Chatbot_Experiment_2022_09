@@ -10,6 +10,7 @@ from lib.db import (
     Resting_Notify_col,
     TAG_col,
     ALL_STATUS,
+    INIT_MSG_col,
 )
 from lib.imp import *
 import requests
@@ -635,6 +636,7 @@ def process_command(event, text):
                     TextSendMessage("歡迎來到此聊天機器人實驗，請先點選上方「閱讀實驗指引」並完成，之後選擇「下一步」開始實驗"),
                 ],
             )
+            INIT_MSG_col.insert_one({"user_id": user["user_id"], "msg": text})
         return True
     elif "Condition_" in user["status"] and "_Pretest" in user["status"]:
         if text == "我已完成前測":
