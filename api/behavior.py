@@ -3,7 +3,7 @@ from fastapi import APIRouter, Response, status
 
 router = APIRouter()
 
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from typing import Any, Dict, AnyStr, List, Union
 from datetime import datetime, timedelta
@@ -55,6 +55,8 @@ class openChatHistoryBody(BaseModel):
     userId: str
     botId: str
     duration: float
+    bot_orders: List[str]
+    at_bot_order: int
 
 
 @router.post("/openChatHistory", responses={401: {}, 200: {}})
@@ -67,6 +69,8 @@ async def changeTopic(data: openChatHistoryBody):
                 "bot_id": data.botId,
                 "condition": user["status"],
                 "behavior": "openChatHistory",
+                "bot_orders": data.bot_orders,
+                "at_bot_order": data.at_bot_order,
                 "duration": data.duration,
                 "add_time": datetime.now(),
             }
