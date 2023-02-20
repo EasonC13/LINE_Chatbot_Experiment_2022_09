@@ -10,7 +10,7 @@ MongoClient = pymongo.MongoClient(
     f"mongodb://{os.getenv('mongo_user')}:{os.getenv('mongo_pw')}@localhost:27081"
 )
 
-DB_NAME = "chatbot_experiment_2022_09"
+DB_NAME = "chatbot_experiment_2023_01"
 GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
 GPT3_chat_log_col = MongoClient[DB_NAME]["GPT3_Chat_log"]
 GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
@@ -36,7 +36,7 @@ def get_database():
 
 from lib.common import line_bot_api, handler, doThreading
 
-Total_Conditions_Count = 3
+
 ALL_STATUS = [
     "New_Starter",
     "Condition_A_Pretest",
@@ -59,6 +59,10 @@ ALL_STATUS = [
     "Condition_E_Chatting",
     "Condition_E_Posttest",
     "Condition_E_Finish",
+    "Condition_F_Pretest",
+    "Condition_F_Chatting",
+    "Condition_F_Posttest",
+    "Condition_F_Finish",
     "Final_Test",
     "Finish",
 ]

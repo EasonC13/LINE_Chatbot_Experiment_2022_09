@@ -11,7 +11,7 @@ MongoClient = pymongo.MongoClient(
     f"mongodb://{os.getenv('mongo_user')}:{os.getenv('mongo_pw')}@localhost:27081"
 )
 
-DB_NAME = "chatbot_experiment_2022_09"
+DB_NAME = "chatbot_experiment_2023_01"
 GPT3_chat_history_col = MongoClient[DB_NAME]["GPT3_Chat"]
 GPT3_chat_user_col = MongoClient[DB_NAME]["Users"]
 GPT3_chat_bots_col = MongoClient[DB_NAME]["Bots"]

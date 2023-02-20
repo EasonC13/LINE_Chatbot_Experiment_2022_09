@@ -227,6 +227,15 @@ def send_GPT3_response(text, event):
     GPT3_chat_log_col.insert_one(data)
 
 
+def remove_eng_after_reply(text):
+    finished = True
+    for i, t in enumerate(text):
+        if ord(t) < 133:
+            finished = False
+            break
+    return text if finished else text[:i]
+
+
 def thread_GPT3(
     message,
     event,
@@ -242,6 +251,7 @@ def thread_GPT3(
     reply_to,
 ):
     response_text = generate_GPT3_response(event, text, bot, user["status"])
+    response_text = remove_eng_after_reply(response_text)
     # print(f"response_text_en = {response_text_en}, text_source = {text_source}")
     response_text_en = translate(response_text, target="en")["translatedText"]
     response_text_en = norm_text(response_text_en)

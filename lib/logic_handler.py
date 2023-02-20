@@ -6,7 +6,6 @@ from lib.db import (
     GPT3_chat_bots_col,
     GPT3_chat_history_col,
     get_user,
-    Total_Conditions_Count,
     Resting_Notify_col,
     TAG_col,
     ALL_STATUS,
@@ -633,7 +632,7 @@ def process_command(event, text):
                             },
                         },
                     ),
-                    TextSendMessage("歡迎來到此聊天機器人實驗，請先點選上方「閱讀實驗指引」並完成，之後選擇「下一步」開始實驗"),
+                    TextSendMessage("歡迎來到此聊天機器人實驗，請先點選上方「進行初始階段」並完成，之後選擇「下一步」開始實驗"),
                 ],
             )
             INIT_MSG_col.insert_one({"user_id": user["user_id"], "msg": text})
